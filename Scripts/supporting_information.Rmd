@@ -1,0 +1,473 @@
+---
+title: "Supporting Information"
+subtitle: Temperature increase does not necessarily promote shrub growth in the Central Canadian Arctic
+output:
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r include=FALSE}
+library(readr)
+library(tidyverse)
+library(bootRes)
+require(dplR)
+library(readxl)
+library(lubridate)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(sf)
+library(ggspatial)
+library(rgeos)
+
+# Shrub Data
+chrono <- shrubs <- read_csv("Data/shrubs.csv")
+
+# Walker Bay Data
+
+WB = read_xls("Data/WB_climate_Archive.xls", sheet="Tair", range="A4:M370")
+
+colnames(WB)[1] = "Day"
+
+WB = WB %>% gather(-Day, key=Year, value=Temperature) %>% mutate(Year = as.integer(Year)) %>% mutate(Date = as.Date((Day-1), origin = paste0(Year,"-01-01"))) %>%
+  mutate(Month = month(Date)) %>%
+  filter(!is.na(Temperature))
+
+WB %>% group_by(Year) %>%
+  summarize(MeanT = mean(Temperature), n = n()) %>%
+  filter(n > 300) %>% ggplot(aes(x=Year, y=MeanT)) + geom_point() + stat_smooth(method="lm") + theme_classic() + ylab("Walker Bay Temperature")
+
+WBAnnual = WB %>% group_by(Year) %>%
+  summarize(MeanT = mean(Temperature), n = n()) %>%
+  filter(n > 300) %>%
+  left_join(shrubs %>% select(Year, stdringwidth, Nb_shrubs))
+
+WBAnnual %>% ggplot(aes(x=MeanT, y=stdringwidth)) + geom_point() + stat_smooth(method="lm") + theme_classic() + xlab("Walker Bay Temperature") + ylab("Shrub Growth") + annotate("text",x=-14, y=1.25, label="p > 0.5")
+
+
+WBJuly = WB %>% group_by(Year) %>%
+  filter(Month==7) %>%
+  summarize(MeanT = mean(Temperature), n = n()) %>%
+  filter(n > 30) %>%
+  left_join(shrubs %>% select(Year, stdringwidth, Nb_shrubs))
+
+#Coppermine Weather data
+coppermine <- read_csv("Data/coppermine1.csv") %>% 
+  select(Year, Month, MeanT = `Mean Temp (°C)`, TotP =`Total Precip (mm)`) %>%
+  bind_rows(read_csv("~/Documents/ArcticShrubs/ArcticShrubs/coppermine2.csv") %>% 
+              select(Year, Month, MeanT = `Mean Temp (°C)`, TotP =`Total Precip (mm)`) %>%
+              filter(!is.na(MeanT))
+            ) %>% filter(!is.na(MeanT) & !is.na(TotP))
+
+avgcoppermine = coppermine %>% 
+  group_by(Year) %>%
+  summarize(MeanT = mean(MeanT), TotP=sum(TotP, na.rm=T), n = n()) %>%
+  left_join(shrubs %>% select(Year, stdringwidth, Nb_shrubs))
+
+
+coppermineJuly = coppermine %>% filter(Month==7)  %>%
+  left_join(shrubs %>% select(Year, stdringwidth, Nb_shrubs))
+
+chrono = subset(chrono, Year > 1933)
+row.names(chrono) = chrono$Year
+chrono = chrono[,c("stdringwidth", "Nb_shrubs")]
+
+coppermine2 = read.csv("coppermine_f.csv")
+
+respcopper = dcc(chrono = chrono, clim = coppermine2)
+
+# Byron Bay Data
+bryonbay <- read_csv("Data/bryonbay.csv", 
+                     skip = 18) %>%
+  select(Year, Month, MeanT = `Mean Temp (°C)`, TotP =`Total Precip (mm)`) %>%
+ filter(!is.na(MeanT) & !is.na(TotP))
+
+avgbryonbay = bryonbay %>% 
+  group_by(Year) %>%
+  summarize(MeanT = mean(MeanT), TotP=sum(TotP, na.rm=T), n = n()) %>%
+  left_join(shrubs %>% select(Year, stdringwidth, Nb_shrubs))
+
+
+bryonbayJuly = bryonbay %>% filter(Month=="07")  %>%
+  left_join(shrubs %>% select(Year, stdringwidth, Nb_shrubs))
+
+chrono <- read.csv("Data/shrubs.csv")
+
+chrono = subset(chrono, Year > 1961 & Year < 1993)
+row.names(chrono) = chrono$Year
+chrono = chrono[,c("stdringwidth", "Nb_shrubs")]
+
+
+bryonbay %>% filter(Year >=1961 & Year <1993) %>% write_csv("DataOut/bryonbayresp.csv")
+
+bryonbay2 = read.csv("DataOut/bryonbayresp.csv")
+
+respbryon = dcc(chrono = chrono, clim = bryonbay2)
+
+# Shurb Compare
+shrubcompare = shrubs %>% select(Year, stdringwidth, Nb_shrubs) %>% left_join(read_csv("Data/ZG_cambridgebay.csv")) %>% left_join(read_csv("~Data/spru_chron_coppermine.csv")) %>% rename(WalkerBay = stdringwidth, CambridgeBay = Res, Kugluktuk = xxxstd)
+
+```
+
+## Regional comparisons
+
+### Location of the field site and weather stations
+
+We collected shrubs from the Walker Bay field reasearch station, which is located on the Kent Penninsula (Figure 1). The climate data came from (1) a weather station operational at Walker Bay for ~5 years, (2) Environment Canada weather data from Cambridge Bay, (3) Environment Canada weatehr data from Byron Bay, and (4) Environment Canada weather data from Kugluktuk (Figure 1). Byron Bay is closest to Walker Bay, but has limited climate data and a different vegatation community (D. Morris, personal observation). We expected \textit{a priori} that Cambridge Bay weather data would be the best match for Walker Bay.
+
+```{r, echo = FALSE, message = F, fig.cap="The location of our field site at Walker Bay and the nearby weather stations at Cambridge Bay and Kugluktuk."}
+
+world <- ne_countries(scale = "medium", returnclass = "sf")
+
+ggplot() +
+  geom_sf(data = world) + xlab("Longtitude") + ylab("Latitude") + 
+  coord_sf(xlim = c(-125, -95), ylim = c(65, 75), expand = FALSE) +
+  theme_minimal()+
+  annotation_north_arrow(location = "bl", which_north = "true", 
+                         # pad_x = unit(0.75, "in"), pad_y = unit(0.5, "in"),
+                         style = north_arrow_fancy_orienteering) +
+  geom_point(aes(x = c(-105.053056,-115.095,-108.083333,-108.416667),
+                 y = c(69.117222,67.825556,68.350000,68.916667)), 
+             pch = 19, size = 2) + 
+  annotate(geom = "text", x = c(-105.053056-0.5,-115.095-3,-108.083333-3.2,-108.416667-2.5), 
+           y =c(69.117222+0.75,67.825556,68.350000-0.1,68.916667+0.4), 
+           label = c("Cambridge \n Bay", "Kugluktuk", "Walker Bay", "Byron Bay"), 
+           color = 'black', size = 3)
+
+```
+
+###Walker Bay Climate Data
+The temperature and precipitation data from a weather station at Walker Bay is available from `r min(WB$Year)` to `r max(WB$Year)`. Annual average temperature did not change during this interval (Figure 2a). The shrub growth recorded at Walker Bay from  `r min(WB$Year)` to `r max(WB$Year)` was not significantly related to annual temperature (*p* > 0.5; Figure 2b) although there was a marginally significant relationship with July temperature (*p* = 0.051; Figure 2c).   
+
+```{r, echo=F, message = F, fig.width=10, fig.height=5,fig.cap="The climate data from Walker Bay its relationship with shrub growth. Temperature (a), annual temperature versus shrub growth(b), and July temperature versus shrub growth (c)."}
+pp1 = WB %>% group_by(Year) %>%
+  summarize(MeanT = mean(Temperature), n = n()) %>%
+  filter(n > 300) %>% ggplot(aes(x=Year, y=MeanT)) + geom_point(size=2) + theme_classic() + ylab("Walker Bay Temperature")
+
+pp2 = WBAnnual %>% ggplot(aes(x=MeanT, y=stdringwidth)) + geom_point(size=2) + theme_classic() + xlab("Walker Bay Temperature") + ylab("Shrub Growth") + annotate("text",x=-14, y=1.25, label="p > 0.5")
+
+pp3 = WBJuly %>% ggplot(aes(x=MeanT, y=stdringwidth)) + geom_point(size=2) + stat_smooth(method="lm") + theme_classic() + xlab("Walker Bay July Temperature") + ylab("Shrub Growth") + annotate("text",x=9, y=1.25, label="p = 0.051")
+
+
+ggpubr::ggarrange(pp1,pp2,pp3, ncol=2, nrow=2, labels="auto")
+```
+
+###Kugluktuk Climate Data
+The temperature and precipitation data from a weather station at Kugluktuk is available from `r min(coppermine$Year)` to `r max(coppermine$Year)`. Annual average temperature significantly increased over this interval (*p* < 0.001; Figure 3). The shrub growth at Walker Bay from `r min(coppermine$Year)` to `r max(coppermine$Year)` was not significantly related to Kugluktuk annual temperature (*p* > 0.5; Figure 3) although there was a  significant relationship with July temperature (*p* < 0.04; Figure 4a).  
+There was enough data for Kugluktuk to repeat the response function analysis comparing Walker Bay shrubs to Kugluktuk climate records. No significant relationships were observed (Figure 5).
+
+```{r, echo=F,message = F, fig.width=10, fig.height=6,fig.cap="Kugluktuk annual data"}
+par(mfrow=c(2,2))
+
+plot(stdringwidth~MeanT, data=avgcoppermine, xlab="Mean Annual Temperature", ylab="Ring Width", pch=19, col="grey")
+m1 = lm(stdringwidth~MeanT, data=avgcoppermine)
+m1r = range(avgcoppermine$MeanT, na.rm=T)
+# curve(m1$coefficients[2]*x + m1$coefficients[1], from=m1r[1], to=m1r[2], add=T, lwd=2)
+legend("topleft", legend = "a", bty = "n")
+
+plot(stdringwidth~TotP, data=avgcoppermine, xlab="Total Annual Precipitation", ylab="Ring Width", pch=19, col="grey")
+m1 = lm(stdringwidth~TotP, data=avgcoppermine)
+m1r = range(avgcoppermine$TotP, na.rm=T)
+# curve(m1$coefficients[2]*x + m1$coefficients[1], from=m1r[1], to=m1r[2], add=T, lwd=2)
+legend("topleft", legend = "b", bty= "n")
+
+plot(MeanT~Year, data=avgcoppermine, xlab="Year", ylab="Mean Annual Temperature", pch=19, col="grey", type="b")
+m1 = lm(MeanT~Year, data=avgcoppermine)
+m1r = range(avgcoppermine$Year, na.rm=T)
+curve(m1$coefficients[2]*x + m1$coefficients[1], from=m1r[1], to=m1r[2], add=T, lwd=2)
+legend("topleft", legend = "c", bty = "n")
+
+plot(TotP~Year, data=avgcoppermine, xlab="Year", ylab="Total Annual Precipitation", pch=19, col="grey", type="b")
+m1 = lm(TotP~Year, data=avgcoppermine)
+m1r = range(avgcoppermine$Year, na.rm=T)
+# curve(m1$coefficients[2]*x + m1$coefficients[1], from=m1r[1], to=m1r[2], add=T, lwd=2)
+legend("topleft", legend = "d", bty = "n")
+```
+
+```{r, echo=F,message = F, fig.width=10, fig.height=5,fig.cap="Kugluktuk (a) and Byron Bay (b) July temperature versus Walker Bay shrub growth"}
+pp1 = coppermineJuly %>% ggplot(aes(x=MeanT, y=stdringwidth)) + geom_point() + stat_smooth(method="lm") + theme_classic() + xlab("Kugluktuk July Temperature") + ylab("Shrub Growth") + annotate("text",x=8, y=1.25, label="p < 0.05")
+
+pp2 = bryonbayJuly %>% ggplot(aes(x=MeanT, y=stdringwidth)) + geom_point(size=2) + theme_classic() + xlab("Byron Bay July Temperature") + ylab("Shrub Growth") + annotate("text",x=8, y=1.25, label="p > 0.2")
+
+ggpubr::ggarrange(pp1,pp2, ncol=2, nrow=1, labels="auto")
+```
+
+```{r, echo=F,message = F, fig.width=10, fig.height=8,fig.cap="No significant response functions for Kugluktuk. Lower case letter indicate months in the year before shrub growth, while capital letters indicate months in the year of shrub growth. MeanT = Mean Temperature; TotP = Total Precipitation"}
+dcplot(respcopper, vertical = F)
+```
+
+###Byron Bay Climate Data
+The temperature and precipitation data from a weather station at Byron Bay is available from `r min(bryonbay$Year)` to `r max(bryonbay$Year)`. Annual average temperature did not change over this interval (*p* > 0.78; Figure 6). The shrub growth at Walker Bay from `r min(bryonbay$Year)` to `r max(bryonbay$Year)` was not significantly related to Byron Bay annual temperature (*p* > 0.7; Figure 6a) nor there was a  significant relationship with July temperature (*p* > 0.2; Figure 4b).  
+There was enough data for Byron Bay to repeat the response function analysis comparing Walker Bay shrubs to Byron Bay climate records. No significant relationships were observed (Figure 7).
+
+```{r, echo=F,message = F, fig.width=10, fig.height=6,fig.cap="Byron Bay annual data"}
+par(mfrow=c(2,2))
+
+plot(stdringwidth~MeanT, data=avgbryonbay, xlab="Mean Annual Temperature", ylab="Ring Width", pch=19, col="grey")
+m1 = lm(stdringwidth~MeanT, data=avgbryonbay)
+m1r = range(avgbryonbay$MeanT, na.rm=T)
+# curve(m1$coefficients[2]*x + m1$coefficients[1], from=m1r[1], to=m1r[2], add=T, lwd=2)
+legend("topleft", legend = "a", bty = "n")
+
+plot(stdringwidth~TotP, data=avgbryonbay, xlab="Total Annual Precipitation", ylab="Ring Width", pch=19, col="grey")
+m1 = lm(stdringwidth~TotP, data=avgbryonbay)
+m1r = range(avgbryonbay$TotP, na.rm=T)
+# curve(m1$coefficients[2]*x + m1$coefficients[1], from=m1r[1], to=m1r[2], add=T, lwd=2)
+legend("topleft", legend = "b", bty = "n")
+
+plot(MeanT~Year, data=avgbryonbay, xlab="Year", ylab="Mean Annual Temperature", pch=19, col="grey", type="b")
+m1 = lm(MeanT~Year, data=avgbryonbay)
+m1r = range(avgbryonbay$Year, na.rm=T)
+# curve(m1$coefficients[2]*x + m1$coefficients[1], from=m1r[1], to=m1r[2], add=T, lwd=2)
+legend("topleft", legend = "c", bty = "n")
+
+plot(TotP~Year, data=avgbryonbay, xlab="Year", ylab="Total Annual Precipitation", pch=19, col="grey", type="b")
+m1 = lm(TotP~Year, data=avgbryonbay)
+m1r = range(avgbryonbay$Year, na.rm=T)
+# curve(m1$coefficients[2]*x + m1$coefficients[1], from=m1r[1], to=m1r[2], add=T, lwd=2)
+legend("topleft", legend = "d", bty = "n")
+
+```
+
+```{r, echo=F,message = F, fig.width=10, fig.height=8,fig.cap="No significant response functions for Byron Bay. Lower case letter indicate months in the year before shrub growth, while capital letters indicate months in the year of shrub growth. MeanT = Mean Temperature; TotP = Total Precipitation"}
+dcplot(respbryon)
+```
+
+###Comparison with other regional chronologies
+
+Two other chronologies exist for our study region, which can be compared with ours at Walker Bay (Figure 8). One was collected for *Salix alaxensis* on Victoria Island near Cambridge Bay. This chronology is relatively well correlated with ours from Walker Bay (r = `r round(with(shrubcompare, cor(WalkerBay,CambridgeBay, use="complete.obs")),2)`). Another chronology is available for *Picea mariana* from Kugluktuk, which is poorly correlated with our chronology from Walker Bay (r = `r round(with(shrubcompare, cor(WalkerBay,Kugluktuk, use="complete.obs")),3)`). The comparison with *P. mariana* is not as relevant as with *S. alaxensis*, because *P. mariana* is a tree species and we expect it to have different climate relationships than the shrubs. The data are included here because the *P. mariana* chronology is one of the few close to our sampling sites at Walker Bay.
+
+```{r, echo=F,message = F, fig.width=10, fig.height=8,fig.cap="Relationship between Central Canadian Arctic chronologies."}
+shrubcompare %>% select(Year, WalkerBay, CambridgeBay, Kugluktuk) %>% gather(-Year, key=Chron, value= Ring) %>% filter(!is.na(Ring)) %>%
+  ggplot(aes(Year, Ring, group=Chron, color=Chron)) + geom_line()+ theme_classic() + annotate("text", x=1950, y=c(2.2,2.0, 1.8), label=c("WB-CB r = 0.19","WB-KUG r = 0.003","CB-KUG r= 0.04"))
+```
+
+\pagebreak
+
+## Different methods for assessing growth over time
+
+One inherent difficulty with assessing growth over time is separating trends in age from trends in average growth. In the main text we used the widely accepted method of removing age related growth with a stiff cubic spline before measuring growth over time. Here we consider alternative methods.
+
+First, we look at the raw chronologies and consider which ones are increasing in growth over time. Only 8 of the 54 chronologies we used in our analysis showed an increase over time (Figure 9), and most of these were young shrubs.
+
+We ran two new standardization methods. First, we standardized each chronology independently using either an average, linear, or quadratic function chosen based on the lowest AIC value for the growth~age relationship. There was no significant trend over time using this method (Figure 10a). Second, we used only the average growth rate to standardize the relative different in shrubs but leave the growth~age trends in the chronology. These standardized data produced a significant growth relationship over time (Figure 10b). 
+
+We re-ran the growth analysis excluding shrubs less than 15 years old to verify whether this newly significant trend was robust to the loss of young, rapidly growing shrubs. We found that removing these shrubs removed the positive growth trend (Figure 10c). Consequently, there is no robust evidence to suggest that *S. richardsonii* growth has increased over the period of our chronologies. It is possible that *S. richardsonii* growth has only begun to increase in the past few decades at Walker Bay although data from at least the first quarter of the 21^st^ century would be necessary to determine whether these young shrubs retain their higher rates as they age.
+
+Finally, we used regional curve standardization, because it has been used to document increases in shrub growth elsewhere (Forbes et al. 2010). No positive trends were evident in our data (Figure 11).
+
+##Shrub cover estimates
+
+```{r Cover, include=F}
+shrubs <- matrix(c(115, 102, 2885, 2898), nrow = 2,
+                      dimnames =
+                        list(c("1996", "2010"),
+                             c("Shrub", "None")))
+
+shortshrubs <- matrix(c(529, 567, 2471, 2433), nrow = 2,
+                      dimnames =
+                        list(c("1996", "2010"),
+                             c("Shrub", "None")))
+
+shrubst <- matrix(c(61, 46, 239, 254), nrow = 2,
+                      dimnames =
+                        list(c("1996", "2010"),
+                             c("Shrub", "None")))
+
+shortshrubst <- matrix(c(216, 184, 84, 116), nrow = 2,
+                      dimnames =
+                        list(c("1996", "2010"),
+                             c("Shrub", "None")))
+```
+
+We have estimates of short and tall shrub cover from Walker Bay in 1996 and 2010. For tall shrubs  (over 25cm tall) the data produce a contingency table (Table 1), which shows no significant change in tall shrub cover (*p* = `r round(fisher.test(shrubs)$p.value,2)`). There was no change in the number of transects with shrubs (Table 2; *p* = `r round(fisher.test(shrubst)$p.value,2)`).
+
+For short shrubs the data produce a contingency table (Table 3), which shows no significant change in short shrub cover (*p* = `r round(fisher.test(shortshrubs)$p.value,2)`). Significantly fewer transects had short shurbs in 2010 than 1996 (Table 4; *p* = `r round(fisher.test(shortshrubst)$p.value,2)`).
+
+```{r results = 'asis'}
+knitr::kable(shrubs, caption = "Tall shrub abundance for two years at 3000 points")
+```
+
+```{r results = 'asis'}
+knitr::kable(shrubst, caption = "Tall shrub abundance for two years on 300 transects")
+```
+
+```{r results = 'asis'}
+knitr::kable(shortshrubs, caption = "Short shrub abundance for two years at 3000 points")
+```
+
+```{r results = 'asis'}
+knitr::kable(shortshrubst, caption = "Short shrub abundance for two years on 300 transects")
+```
+
+
+```{r, include = F, message = F, warning = F}
+
+rawdata<- read_csv("raw_ring_data_June2019.csv")
+
+rwdu <- read_csv("final_chron_used_mod.csv")
+
+rawsum <- rawdata %>% gather(-Year, key=ID, value=raw) %>% 
+  separate(ID, into =c("ID1", "ID2"), sep="-") %>%
+  mutate(ID2 = str_pad(ID2, width = 3, side="right", pad= "_")) %>%
+  mutate(ID2 = str_pad(ID2, width = 4, side="right", pad= "2")) %>%
+  filter(!is.na(raw)) %>% 
+  separate(ID2, into =c("ID2", "radius"), sep="_") %>%
+  mutate(ID = paste0(ID1, "-", ID2)) %>%
+  select(-ID1, -ID2) %>%
+  group_by(Year, ID) %>%
+  summarize(raw = mean(raw))
+
+stddata = finaldata = rawdata = rwdu %>% left_join(rawsum) %>% spread(key=ID, value=raw) %>% as.data.frame()
+
+number = dim(rawdata)[2]
+
+selvec = rep(NA, number)
+slopevec = rep(NA, number)
+sqrvec = rep(NA, number)
+sqrvec2 = rep(NA, number)
+
+for(i in 2:number){
+  rawdatacur = rawdata[,c(1,i)]
+  cur = rawdatacur[!is.na(rawdatacur[,2]),]
+  colnames(cur) = c("Year", "Chron")
+  cur["age"] = seq(1, dim(cur)[1], 1)
+  cur["age2"] = cur["age"]^2
+  m1 = lm(Chron~0, data=cur); summary(m1)
+  m2 = lm(Chron~age, data=cur); summary(m2)
+  m3 = lm(Chron~age2 + age, data=cur); summary(m3)
+  sel = which(AIC(m1, m2, m3)$AIC == min(AIC(m1, m2, m3)$AIC))
+  modelsel = rownames(AIC(m1, m2, m3))[sel]
+  selvec[i] = modelsel
+  slopevec[i] = coefficients(m2)[2]
+  sqrvec[i] = coefficients(m3)[2]
+  sqrvec2[i] = coefficients(m3)[3]
+  resids = resid(get(modelsel))
+  finaldata[as.numeric(names(resids)),i] = resids
+}
+
+for(i in 2:number){
+  rawdatacur = rawdata[,c(1,i)]
+  cur = rawdatacur[!is.na(rawdatacur[,2]),]
+  colnames(cur) = c("Year", "Chron")
+  cur["age"] = seq(1, dim(cur)[1], 1)
+  cur["age2"] = cur["age"]^2
+  m1 = lm(Chron~0, data=cur); summary(m1)
+  resids = resid(m1)
+  stddata[as.numeric(names(resids)),i] = resids
+}
+
+# Get positive negative trends
+ddd = data.frame(ID = colnames(rawdata)[-1], Slope = slopevec[-1])
+ddd[,"PN"] = ifelse(ddd$Slope > 0, "+", "-")
+ddd[,"Year"] = 1930
+ddd[,"raw"] = 600
+
+# Create plots
+
+p1 = finaldata %>% as_tibble() %>%
+  gather(-Year, key=ID, value=ringres) %>%
+  filter(!is.na(ringres)) %>%
+  group_by(Year) %>%
+  summarize(mring = mean(ringres)) %>%
+  ggplot(aes(x=Year, y=mring)) +
+  geom_line() +
+  stat_smooth(method="lm") + theme_classic() + ylab("Chronology")
+
+p2 = stddata %>% as_tibble() %>%
+  gather(-Year, key=ID, value=ringres) %>%
+  filter(!is.na(ringres)) %>%
+  group_by(Year) %>%
+  summarize(mring = mean(ringres)) %>%
+  ggplot(aes(x=Year, y=mring)) +
+  geom_line() +
+  stat_smooth(method="lm") +
+  geom_text(x=1970, y=125, label="p<0.01", size=3) + theme_classic() + ylab("Chronology")
+
+p3 = stddata %>% as_tibble() %>%
+  gather(-Year, key=ID, value=ringres) %>%
+  filter(!is.na(ringres)) %>%
+  group_by(ID) %>%
+  summarize(N = n()) %>%
+  filter(N > 10) %>% select(-N) %>% 
+  left_join(
+    stddata %>% as_tibble() %>%
+      gather(-Year, key=ID, value=ringres) %>%
+      filter(!is.na(ringres))
+  ) %>%
+  group_by(Year) %>%
+  summarize(mring = mean(ringres)) %>%
+  ggplot(aes(x=Year, y=mring)) +
+  geom_line() +
+  stat_smooth(method="lm") + theme_classic() + ylab("Chronology")
+
+summary(lm(mring~Year, data = finaldata %>% as_tibble() %>%
+             gather(-Year, key=ID, value=ringres) %>%
+             filter(!is.na(ringres)) %>%
+             group_by(Year) %>%
+             summarize(mring = mean(ringres))))
+
+summary(lm(mring~Year, data = stddata %>% as_tibble() %>%
+             gather(-Year, key=ID, value=ringres) %>%
+             filter(!is.na(ringres)) %>%
+             group_by(Year) %>%
+             summarize(mring = mean(ringres))))
+
+summary(lm(mring~Year, data = stddata %>% as_tibble() %>%
+             gather(-Year, key=ID, value=ringres) %>%
+             filter(!is.na(ringres)) %>%
+             group_by(ID) %>%
+             summarize(N = n()) %>%
+             filter(N > 15) %>% select(-N) %>% 
+             left_join(
+               stddata %>% as_tibble() %>%
+                 gather(-Year, key=ID, value=ringres) %>%
+                 filter(!is.na(ringres))
+             ) %>%
+             group_by(Year) %>%
+             summarize(mring = mean(ringres))))
+
+
+```
+
+```{r, echo=F,message = F, fig.width=10, fig.height=10,fig.cap="Raw ring width data for all the shrubs. Signs indicate whether the average slope of the raw chronology is positive (N = 8) or negative (N = 46)."}
+# rawdata %>% gather(-Year, key=ID, value=raw) %>% 
+rawdata %>% gather(-Year, key=ID, value=raw) %>%
+  separate(ID, into =c("ID1", "ID2"), sep="-") %>%
+  mutate(ID2 = str_pad(ID2, width = 3, side="right", pad= "_")) %>%
+  mutate(ID2 = str_pad(ID2, width = 4, side="right", pad= "2")) %>%
+  filter(!is.na(raw)) %>% 
+  separate(ID2, into =c("ID2", "radius"), sep="_") %>%
+  mutate(ID = paste0(ID1, "-", ID2)) %>%
+  select(-ID1, -ID2) %>%
+  group_by(Year, ID) %>%
+  summarize(raw = mean(raw))%>%
+  ungroup() %>%
+  right_join(rwdu) %>%
+  ggplot(aes(x=Year, y=raw)) +
+  geom_line() + 
+  geom_text(data = ddd, aes(label = PN), size = 6) + 
+  facet_wrap(.~ID) +
+  theme_classic() + scale_x_continuous(breaks = c(1920, 1960, 2000),
+                                       minor_breaks = NULL)
+
+```
+
+```{r, echo=F,message = F, fig.width=10, fig.height=8,fig.cap="The trends in growth over time using different standardization methods. The residual chronology (a) created by choosing the best fit age model (average, linear, quadratic) for each shrub shows no growth trend. Standardizing growth by using only the average chronology (b) does produce a positive growth trend over time. However, this trend disappears when young (< 15 year old) shrubs are removed."}
+ggpubr::ggarrange(p1,p2,p3, ncol=1, nrow=3, labels="auto")
+```
+
+```{r, echo=F,message = F, fig.width=10, fig.height=8,fig.cap="A regional curve standardization for *Salix richardsonii* at Walker Bay. There was no increase in growth."}
+d1 = rawsum %>% mutate(raw = raw/(1000)) %>% spread(key = ID, value = raw) %>% as.data.frame()
+row.names(d1) = d1$Year
+d1$Year = NULL
+
+d2 = rawsum %>%
+  group_by(ID) %>%
+  summarize(N = n()) %>% as.data.frame()
+
+rcs1 <- rcs(rwl = d1, po = d2, make.plot = T)
+
+```
