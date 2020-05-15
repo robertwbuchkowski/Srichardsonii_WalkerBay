@@ -10,10 +10,10 @@ knitr::opts_chunk$set(echo = FALSE)
 ```
 
 ```{r include=FALSE}
-library(readr)
 library(tidyverse)
 library(bootRes)
 require(dplR)
+# library(treeclim)
 library(readxl)
 library(lubridate)
 library(rnaturalearth)
