@@ -15,6 +15,28 @@ d2 = read.csv("Data/list_to_include.csv")
 
 all(d1$Shrub %in% d2$Shrub)
 
+# Compare age and year
+
+ay1 = read.csv("Data/shrubs.csv")
+ay2 = ay1
+
+for(i in 2:71){
+  N = length(ay2[,i][!is.na(ay2[,i])])
+  ay2[,i][!is.na(ay2[,i])] = seq(1, N, 1)
+}
+
+ay2 = ay2 %>%
+  gather(-Year, key = Shrub, value = age) %>%
+  filter(!is.na(age)) %>%
+  left_join(d2) %>%
+  filter(Include == "Oui")
+
+plot(age~Year, data = ay2)
+
+cor(ay2$age,ay2$Year, method = "pearson")
+
+# Return to analysis
+
 d1 = d1 %>% 
   left_join(d2) %>%
   filter(Include == "Oui") %>%
@@ -47,15 +69,28 @@ respCB = dcc_RWB(chrono = dresp, clim = CBclimate, method = "response", start = 
 respCB$ID = rownames(respCB)
 rownames(respCB) = NULL
 
-png("Plots/Figure3.png", width = 5, height = 7, units = "in", res = 600)
-respCB %>% separate(ID, into = c("variable", "year", "month"), sep =c(2,8)) %>%
-  mutate(variable = ifelse(variable == "MT", "Average temperature  (\u00B0C)", "Total precipitation (mm)")) %>%
+mutate(variable = ifelse(variable == "MT", "Average temperature  (\u00B0C)", "Total precipitation (mm)"))
+
+p1 = respCB %>% separate(ID, into = c("variable", "year", "month"), sep =c(2,8)) %>%
   mutate(Month = rep(c("jn", "ju", "au", "se", "oc", "no", "de", "Ja", "Fe", "Mr", "Ap", "Ma", "Jn", "Ju", "Au", "Se"), 2)) %>%
   select(-year, -month) %>%
+  filter(variable == "MT") %>%
   ggplot(aes(x = Month, y = coef, color = significant)) + 
-  geom_hline(yintercept = 0, linetype = 2) + geom_point() + facet_wrap(.~variable, ncol = 1, nrow = 2) + theme_classic() + geom_errorbar(aes(ymin = ci.lower, ymax = ci.upper)) + 
+  geom_hline(yintercept = 0, linetype = 2) + geom_point() + theme_classic() + geom_errorbar(aes(ymin = ci.lower, ymax = ci.upper)) + 
   scale_x_discrete(limits = c("jn", "ju", "au", "se", "oc", "no", "de", "Ja", "Fe", "Mr", "Ap", "Ma", "Jn", "Ju", "Au", "Se")) +
-  scale_color_manual(values = c("grey", "black")) + ylab("Response coefficient") + theme(legend.position = "none")
+  scale_color_manual(values = c("grey", "black")) + ylab("Response coefficient") + theme(legend.position = "none") + ggtitle("Average temperature  (\u00B0C)")
+
+p2 = respCB %>% separate(ID, into = c("variable", "year", "month"), sep =c(2,8)) %>%
+  mutate(Month = rep(c("jn", "ju", "au", "se", "oc", "no", "de", "Ja", "Fe", "Mr", "Ap", "Ma", "Jn", "Ju", "Au", "Se"), 2)) %>%
+  select(-year, -month) %>%
+  filter(variable == "TP") %>%
+  ggplot(aes(x = Month, y = coef, color = significant)) + 
+  geom_hline(yintercept = 0, linetype = 2) + geom_point() + theme_classic() + geom_errorbar(aes(ymin = ci.lower, ymax = ci.upper)) + 
+  scale_x_discrete(limits = c("jn", "ju", "au", "se", "oc", "no", "de", "Ja", "Fe", "Mr", "Ap", "Ma", "Jn", "Ju", "Au", "Se")) +
+  scale_color_manual(values = c("grey", "black")) + ylab("Response coefficient") + theme(legend.position = "none") + ggtitle("Total precipitation (mm)")
+
+png("Plots/Figure3.png", width = 5, height = 7, units = "in", res = 600)
+ggpubr::ggarrange(p1,p2, labels = "AUTO", ncol = 1, nrow = 2)
 dev.off()
 
 # Figure 1 ----
@@ -67,6 +102,7 @@ shrubs2[,"Pred"] = pred.m1
 p1 = shrubs2 %>% 
   ggplot(aes(x = Year, y = MeantempAnnual)) + 
   geom_point(shape = 1, size = 3) + theme_classic() + 
+  scale_x_continuous(breaks = seq(1940, 2020, by = 10)) + 
   geom_line(aes(y = Pred)) + ylab("Mean Temperature (\u00B0C)")
 
 m1 = lm(MeantempJuly~Year, data=shrubs2)
@@ -76,6 +112,7 @@ shrubs2[,"Pred"] = pred.m1
 p2 = shrubs2 %>% 
   ggplot(aes(x = Year, y = MeantempJuly)) + 
   geom_point(shape = 1, size = 3) + theme_classic() + 
+  scale_x_continuous(breaks = seq(1940, 2020, by = 10)) + 
   geom_line(aes(y = Pred)) + ylab("Mean July Temperature (\u00B0C)")
 
 png("Plots/Figure1.png", width = 5, height = 7, units = "in", res = 600)
@@ -87,7 +124,7 @@ d1 %>% mutate(upper = chrono + sd, lower = chrono -sd) %>%
   mutate(N = N/100) %>%
   ggplot(aes(x = Year, y = chrono)) + 
   geom_ribbon(aes(ymin = lower, ymax = upper), fill = "grey") + 
-  theme_classic() + geom_line(lwd = 1.5) + ylab("Standardized Ring Width") + scale_y_continuous(sec.axis = sec_axis(~ . *100, name = "Sample depth")) +
+  theme_classic() + geom_line(lwd = 1.1) + ylab("Standardized Ring Width") + scale_y_continuous(sec.axis = sec_axis(~ . *100, name = "Sample depth")) +
   geom_ribbon(aes(x = Year, ymin = 0, ymax = N), fill = "snow4")
 dev.off()
 

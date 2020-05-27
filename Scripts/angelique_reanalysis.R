@@ -188,8 +188,6 @@ output$Sig = ifelse(output$p < 0.05, "Yes","No")
 output$lower = output$Coef - output$StdEr
 output$upper = output$Coef + output$StdEr
 
-
-
 # Create plots
 
 p1 = finaldataMEAN %>%
@@ -206,4 +204,4 @@ p2 = stddataMEAN %>%
 p3 = output %>% ggplot(aes(x = RM, y = Coef, color = Sig)) + geom_point() + theme_classic() + geom_errorbar(aes(ymin = lower, ymax = upper, width = 0.1)) + 
   xlab("Number of shrubs removed") + ylab("Year Coefficient") + scale_color_discrete(name = "Significant")
 
-ggpubr::ggarrange(p1,p2,p3, labels = "AUTO")
+ggpubr::ggarrange(p2,p3, labels = "AUTO")
