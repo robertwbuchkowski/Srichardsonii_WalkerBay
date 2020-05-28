@@ -243,9 +243,9 @@ knitr::kable(shortshrubs, caption = "Short shrub abundance for two years at 3000
 knitr::kable(shortshrubst, caption = "Short shrub abundance for two years on 300 transects")
 ```
 
-## Raw ring width data
+## Raw ring width and area data
 
-The raw ring width data demonstrate a strong decrease in growth during the first years for most shrubs (Figure 7). This age-dependent growth trend encouraged us to use a ring area method for assessing growth over time.
+The raw ring width data demonstrate a strong decrease in growth during the first years for most shrubs (Figure 7). This age-dependent growth trend encouraged us to use a ring area method for assessing growth over time. Using the ring area instead of the ring width removed the age-based growth trend in the data and allowed us to analyze growth over time without removing any temporal signal with standardization (Figure 8).
 
 ```{r, include = F, message = F, warning = F}
 
