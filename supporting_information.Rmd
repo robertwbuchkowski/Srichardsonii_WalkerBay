@@ -1,6 +1,6 @@
 ---
 title: "Supporting Information"
-subtitle: Temperature increase does not necessarily promote shrub growth in the Central Canadian Arctic
+subtitle: An increase in mean temperature promotes shrub growth but not expansion in the Central Canadian Arctic
 output:
   pdf_document: default
 ---
@@ -123,7 +123,7 @@ shrubcompare = shrubs %>% select(Year, stdringwidth, Nb_shrubs) %>% left_join(re
 
 ### Location of the field site and weather stations
 
-We collected shrubs from the Walker Bay field reasearch station, which is located on the Kent Penninsula (Figure 1). The climate data came from (1) a weather station operational at Walker Bay for ~5 years, (2) Environment Canada weather data from Cambridge Bay, (3) Environment Canada weatehr data from Byron Bay, and (4) Environment Canada weather data from Kugluktuk (Figure 1). Byron Bay is closest to Walker Bay, but has limited climate data and a different vegatation community (D. Morris, personal observation). We expected \textit{a priori} that Cambridge Bay weather data would be the best match for Walker Bay.
+We collected shrubs from the Walker Bay field reasearch station, which is located on the Kent Penninsula (Figure 1). The climate data came from (1) a weather station operational at Walker Bay for ~5 years, (2) Environment Canada weather data from Cambridge Bay, (3) Environment Canada weather data from Byron Bay, and (4) Environment Canada weather data from Kugluktuk (Figure 1). Byron Bay is closest to Walker Bay, but has limited climate data and a different vegatation community (D. Morris, personal observation). We expected \textit{a priori} that Cambridge Bay weather data would be the best match for Walker Bay.
 
 To confirm that Cambridge Bay was the most appropriate climate data, we also downloaded data from two other nearby weather stations at Kugluktuk and Byron Bay.
 
@@ -165,8 +165,8 @@ ggpubr::ggarrange(pp1,pp2,pp3, ncol=2, nrow=2, labels="auto")
 ```
 
 ###Kugluktuk Climate Data
-The temperature and precipitation data from a weather station at Kugluktuk is available from `r min(coppermine$Year)` to `r max(coppermine$Year)`. Annual average temperature significantly increased over this interval (*p* < 0.001). The shrub growth at Walker Bay from `r min(coppermine$Year)` to `r max(coppermine$Year)` was not significantly related to Kugluktuk annual temperature (*p* > 0.5) although there was a  significant relationship with July temperature (*p* < 0.04; Figure 3a).  
-There was enough data for Kugluktuk to repeat the response function analysis comparing Walker Bay shrubs to Kugluktuk climate records. No significant relationships were observed (Figure 4).
+The temperature and precipitation data from a weather station at Kugluktuk are available from `r min(coppermine$Year)` to `r max(coppermine$Year)`. Annual average temperature significantly increased over this interval (*p* < 0.001). The shrub growth at Walker Bay from `r min(coppermine$Year)` to `r max(coppermine$Year)` was not significantly related to Kugluktuk annual temperature (*p* > 0.5) although there was a  significant relationship with July temperature (*p* < 0.04; Figure 3a).  
+There were enough data for Kugluktuk to repeat the response function analysis comparing Walker Bay shrubs to Kugluktuk climate records. No significant relationships were observed (Figure 4).
 
 ```{r, echo=F,message = F, fig.width=10, fig.height=5,fig.cap="Kugluktuk (a) and Byron Bay (b) July temperature versus Walker Bay shrub growth"}
 pp1 = coppermineJuly %>% ggplot(aes(x=MeanT, y=stdringwidth)) + geom_point() + stat_smooth(method="lm") + theme_classic() + xlab("Kugluktuk July Temperature") + ylab("Shrub Growth") + annotate("text",x=8, y=1.25, label="p < 0.05")
@@ -176,15 +176,15 @@ pp2 = bryonbayJuly %>% ggplot(aes(x=MeanT, y=stdringwidth)) + geom_point(size=2)
 ggpubr::ggarrange(pp1,pp2, ncol=2, nrow=1, labels="auto")
 ```
 
-```{r, echo=F,message = F, fig.width=10, fig.height=8,fig.cap="No significant response functions for Kugluktuk. Lower case letter indicate months in the year before shrub growth, while capital letters indicate months in the year of shrub growth. MeanT = Mean Temperature; TotP = Total Precipitation"}
+```{r, echo=F,message = F, fig.width=10, fig.height=8,fig.cap="No significant response functions for Kugluktuk. Lower case letters indicate months in the year before shrub growth, while capital letters indicate months in the year of shrub growth. MeanT = Mean Temperature; TotP = Total Precipitation"}
 dcplot(respcopper, vertical = F)
 ```
 
 ###Byron Bay Climate Data
-The temperature and precipitation data from a weather station at Byron Bay is available from `r min(bryonbay$Year)` to `r max(bryonbay$Year)`. Annual average temperature did not change over this interval (*p* > 0.78). The shrub growth at Walker Bay from `r min(bryonbay$Year)` to `r max(bryonbay$Year)` was not significantly related to Byron Bay annual temperature (*p* > 0.7) nor there was a  significant relationship with July temperature (*p* > 0.2; Figure 3b).  
-There was enough data for Byron Bay to repeat the response function analysis comparing Walker Bay shrubs to Byron Bay climate records. April temperature during the growth year at Byron Bay was a significant predictor of shrub radial growth at Walker Bay. All other response function coefficients were not significant (Figure 5). We are cautious to interpret the significant response function coefficient for April as mechanistic, because the climate time series for Byron Bay (1962 - 1991) is much shorter than the one avaialble for Cambridge Bay (1949 - present). In fact, reanalyzing the climate-growth relationship for Cambridge Bay using the same years as there are data for Byron Bay produces a new significant response function coefficient (April total percipitation) that is not significant for the full dataset. In summary, there is limited evidence that spring temperature might be important for shrubs at Walker Bay, but it is not strong enough to be conclusive with the current dataset. 
+The temperature and precipitation data from a weather station at Byron Bay are available from `r min(bryonbay$Year)` to `r max(bryonbay$Year)`. Annual average temperature did not change over this interval (*p* > 0.78). The shrub growth at Walker Bay from `r min(bryonbay$Year)` to `r max(bryonbay$Year)` was not significantly related to Byron Bay annual temperature (*p* > 0.7) nor there was a  significant relationship with July temperature (*p* > 0.2; Figure 3b).  
+There were enough data for Byron Bay to repeat the response function analysis comparing Walker Bay shrubs to Byron Bay climate records. April temperature during the growth year at Byron Bay was a significant predictor of shrub radial growth at Walker Bay. All other response function coefficients were not significant (Figure 5). We are cautious to interpret the significant response function coefficient for April as mechanistic, because the climate time series for Byron Bay (1962 - 1991) is much shorter than the one available for Cambridge Bay (1949 - present). In fact, reanalyzing the climate-growth relationship for Cambridge Bay using the same years as there are data for Byron Bay produces a new significant response function coefficient (April total percipitation) that is not significant for the full dataset. In summary, there is limited evidence that spring temperature might be important for shrubs at Walker Bay, but it is not strong enough to be conclusive with the current dataset. 
 
-```{r, echo=F,message = F, fig.width=10, fig.height=8,fig.cap="April temperature in the growth year at Byron Bay had a significant response function coefficient. Lower case letter indicate months in the year before shrub growth, while capital letters indicate months in the year of shrub growth. MeanT = Mean Temperature; TotP = Total Precipitation"}
+```{r, echo=F,message = F, fig.width=10, fig.height=8,fig.cap="April temperature in the growth year at Byron Bay had a significant response function coefficient. Lower case letters indicate months in the year before shrub growth, while capital letters indicate months in the year of shrub growth. MeanT = Mean Temperature; TotP = Total Precipitation"}
 dcplot(respbryon)
 ```
 
@@ -194,7 +194,7 @@ Two other chronologies exist for our study region, which can be compared with ou
 
 ```{r, echo=F,message = F, fig.width=10, fig.height=8,fig.cap="Relationship between Central Canadian Arctic chronologies."}
 shrubcompare %>% select(Year, WalkerBay, CambridgeBay, Kugluktuk) %>% gather(-Year, key=Chron, value= Ring) %>% filter(!is.na(Ring)) %>%
-  ggplot(aes(Year, Ring, group=Chron, color=Chron)) + geom_line()+ theme_classic() + annotate("text", x=1950, y=c(2.2,2.0, 1.8), label=c("WB-CB r = 0.19","WB-KUG r = 0.003","CB-KUG r= 0.04"))
+  ggplot(aes(Year, Ring, group=Chron, color=Chron)) + geom_line()+ theme_classic() + annotate("text", x=1950, y=c(2.2,2.0, 1.8), label=c("WB-CB r = 0.19","WB-KUG r = 0.003","CB-KUG r= 0.04")) + scale_color_discrete(name = "Chronology") + ylab("Standardized ring width")
 ```
 
 \pagebreak
@@ -223,9 +223,9 @@ shortshrubst <- matrix(c(216, 184, 84, 116), nrow = 2,
                              c("Shrub", "None")))
 ```
 
-We have estimates of short and tall shrub cover from Walker Bay in 1996 and 2010. For tall shrubs  (over 25cm tall) the data produce a contingency table (Table 1), which shows no significant change in tall shrub cover (*p* = `r round(fisher.test(shrubs)$p.value,2)`). There was no change in the number of transects with shrubs (Table 2; *p* = `r round(fisher.test(shrubst)$p.value,2)`).
+We have estimates of short and tall shrub cover from Walker Bay in 1996 and 2010. For tall shrubs  (over 25cm tall) the data produce a contingency table (Table 1) which shows no significant change in tall shrub cover (*p* = `r round(fisher.test(shrubs)$p.value,2)`). There was no change in the number of transects with shrubs (Table 2; *p* = `r round(fisher.test(shrubst)$p.value,2)`).
 
-For short shrubs the data produce a contingency table (Table 3), which shows no significant change in short shrub cover (*p* = `r round(fisher.test(shortshrubs)$p.value,2)`). Significantly fewer transects had short shurbs in 2010 than 1996 (Table 4; *p* = `r round(fisher.test(shortshrubst)$p.value,2)`).
+For short shrubs the data produce a contingency table (Table 3) which shows no significant change in short shrub cover (*p* = `r round(fisher.test(shortshrubs)$p.value,2)`). Significantly fewer transects had short shurbs in 2010 than 1996 (Table 4; *p* = `r round(fisher.test(shortshrubst)$p.value,2)`).
 
 ```{r results = 'asis'}
 knitr::kable(shrubs, caption = "Tall shrub abundance for two years at 3000 points")
@@ -272,7 +272,8 @@ rawdata %>% gather(-Year, key=ID, value=raw) %>%
   geom_line() + 
   facet_wrap(.~ID) +
   theme_classic() + scale_x_continuous(breaks = c(1920, 1960, 2000),
-                                       minor_breaks = NULL)
+                                       minor_breaks = NULL) +
+  ylab(expression(Ring~width~(mu*m)))
 
 ```
 
