@@ -275,3 +275,15 @@ rawdata %>% gather(-Year, key=ID, value=raw) %>%
                                        minor_breaks = NULL)
 
 ```
+
+```{r, echo=F,message = F, fig.width=10, fig.height=10,fig.cap="Raw ring area data for all the shrubs used in our analysis. Notice that ring area removes the strong age-based growth trend present in the raw data."}
+read_csv("Data/ringarea2.csv") %>% gather(-Year, key = ID, value = ringarea) %>% filter(!is.na(ringarea)) %>% mutate(ringarea = ringarea/1e6) %>%
+  ggplot(aes(x=Year, y=ringarea)) +
+  geom_line() + 
+  facet_wrap(.~ID) + 
+  ylab(expression(Ring~area~(mm^2))) +
+  theme_classic() + 
+  scale_x_continuous(breaks = c(1920, 1960, 2000),
+                                       minor_breaks = NULL)
+
+```
