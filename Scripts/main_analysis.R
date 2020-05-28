@@ -160,7 +160,7 @@ area2[,"Pred"] = pred.m1
 
 GT = tibble(X = c(1930,1930),
        Y = c(2,1.8),
-       L = c("italic(R)^2==0.74","italic(p)<0.0001"))
+       L = c("italic(R)^2==0.74","italic(p)<0.001"))
 
 p1 = area2 %>%
   mutate(upper = ringarea + sd, lower = ringarea -sd) %>%
@@ -185,11 +185,10 @@ area3[,"Pred"] = pred.m1
 
 GT = tibble(X = c(5,5),
             Y = c(2,1.8),
-            L = c("italic(R)^2==0.27","italic(p)<0.0001"))
+            L = c("italic(R)^2==0.27","italic(p)<0.001"))
 
 p2 = area3 %>%
   mutate(upper = ringarea + sd, lower = ringarea -sd) %>%
-  mutate(N = N/100) %>%
   mutate(lower = ifelse(lower < 0, 0, lower)) %>%
   ggplot(aes(x = JulyTemp, y = ringarea)) + 
   theme_classic() + geom_pointrange(aes(ymin = lower, ymax = upper),shape = 1) + 
