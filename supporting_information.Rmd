@@ -243,9 +243,34 @@ knitr::kable(shortshrubs, caption = "Short shrub abundance for two years at 3000
 knitr::kable(shortshrubst, caption = "Short shrub abundance for two years on 300 transects")
 ```
 
+```{r results = 'asis'}
+
+A1 = c("June", 2010, 17, "We randomly sampled one shrub \n from 12 lemming sampling grids, \n one shrubs from four quardats of a predator field exclosure, \n and one shrub from a \n snap-trap transect.", "Krebs et al., 2012; Dupuch et al., 2014")
+A2 = c("June", 2011, 41, "We randomly sampled forty shrubs were sampled at random four transects (500m long and 100m apart).\n  We added one shrub that \n was much older than the others to extend our chronology.", "No currently published work")
+A3 = c("June", 2015, 12, "We randomly sampled one shrub from the same 12 lemming \n sampling grids that were sampled in 2010.", "Dupuch et al., 2014")
+
+AA = as.data.frame(rbind(A1,A2,A3))
+rownames(AA) = NULL
+
+colnames(AA) = c("Month", "Year", "N","Description","References")
+
+
+knitr::kable(AA, caption = "Sampling regime for the shrubs using in our dendrochronological analysis. N is the number of shrub branches sampled, each from an individual shrub.")
+```
+
+
+## Comparison of climate-growth relationship over time
+
+The climate-growth relationship was not constant over time and the relationship between mean July temperature and shurb growth strengthened significantly in the 1970's (Figure 7).
+
+```{r, echo=F,message = F, fig.width=10, fig.height=10,fig.cap="The trends in the relationship between July temperature and growth over time using an 11-year moving window centered on the year displayed on the x-axis. The trends are the same for ring width and ring area."}
+read_csv("DataOut/movingcorr.csv") %>% select(-end, -start) %>% gather(-middle,key = `Data Type`, value = value) %>% ggplot(aes(x = middle, y = value, linetype = `Data Type`)) + geom_line() + theme_classic() + ylab("Correlation: July temperature and growth") + xlab("Center of 11-yr window")
+
+```
+
 ## Raw ring width and area data
 
-The raw ring width data demonstrate a strong decrease in growth during the first years for most shrubs (Figure 7). This age-dependent growth trend encouraged us to use a ring area method for assessing growth over time. Using the ring area instead of the ring width removed the age-based growth trend in the data and allowed us to analyze growth over time without removing any temporal signal with standardization (Figure 8).
+The raw ring width data demonstrate a strong decrease in growth during the first years for most shrubs (Figure 8). This age-dependent growth trend encouraged us to use a ring area method for assessing growth over time. Using the ring area instead of the ring width removed the age-based growth trend in the data and allowed us to analyze growth over time without removing any temporal signal with standardization (Figure 9).
 
 ```{r, include = F, message = F, warning = F}
 

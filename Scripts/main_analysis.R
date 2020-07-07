@@ -124,6 +124,16 @@ p2 = shrubs2 %>%
   geom_text(aes(x = X, y = Y, label = L), data = GT, parse = T) +
   geom_line(aes(y = Pred), col = "blue") + ylab("Mean July Temperature (\u00B0C)")
 
+# Check whether the July temperature has increased from 1996 to 2010:
+m1_short = lm(MeantempJuly~Year, data=shrubs2 %>% filter(Year > 1995 & Year < 2010))
+summary(m1_short)
+plot(m1_short)
+
+# Check whether total precipiration has changed from 1996 to 2010:
+m1_precip = lm(TotalPrecipAnnual~Year, data=shrubs2 %>% filter(Year > 1995 & Year < 2010))
+summary(m1_precip)
+plot(m1_precip)
+
 png("Plots/Figure1.png", width = 5, height = 7, units = "in", res = 600)
 ggpubr::ggarrange(p1,p2, labels = "AUTO", ncol = 1, nrow = 2)
 dev.off()     
@@ -173,6 +183,22 @@ p1 = area2 %>%
   scale_x_continuous(breaks = seq(1920, 2020, by = 10)) + ylab(expression(Ring~area~(mm^2))) +
   geom_text(aes(x = X, y = Y, label = L), data = GT, parse = T)
 
+
+# Breakpoint analysis:
+m1_breakpoint = segmented::segmented(m1)
+summary(m1_breakpoint)
+plot(m1_breakpoint)
+
+out = data.frame(SY = 1924:2012)
+out$BP = NA
+
+for(i in 2:dim(out)[1]){
+  out$BP[i] = segmented::segmented(m1, psi = out$SY[i])$psi[2]
+}
+plot(BP~SY, data = out)
+# No robust breakpoint in these data: could be ~2007 or ~1948, but this is not capturing large sections of the data or dependent systematically on where the analysis starts
+rm(out, m1_breakpoint)
+
 area3 = area %>% select(Year, JulyTemp) %>%
   filter(!is.na(JulyTemp)) %>%
   left_join(
@@ -201,12 +227,37 @@ png("Plots/Figure4.png", width = 5, height = 7, units = "in", res = 600)
 ggpubr::ggarrange(p1,p2, labels = "AUTO", ncol = 1, nrow = 2)
 dev.off()  
 
+# Test shrub growth over the same period as shrub cover (1996-2010)
+m1_mod = lm(ringarea~Year, data = area2 %>% filter(Year > 1995 & Year < 2011)); summary(m1_mod) # Not significant!
+plot(m1_mod)
+
+# Test over all 14 year periods in the data set
+
+outmove = data.frame(start = 1922:2000,
+           end = 1936:2014, 
+           coeff = NA,
+           p = NA)
+
+for(i in 1:dim(outmove)[1]){
+  m1_mod = lm(ringarea~Year, data = area2 %>% filter(Year >= outmove$start[i] & Year <= outmove$end[i]))
+  outmove$coeff[i] = summary(m1_mod)$coefficients[2,1]
+  outmove$p[i] = summary(m1_mod)$coefficients[2,4]
+}
+
+outmove$sig = ifelse(outmove$p < 0.05, "blue", "orange")
+
+plot(coeff~start, outmove, col = sig, type = "b", ylab = "Year Coefficient", xlab = "Start of 14-yr window")
+abline(v = 1996, lty = 2)
+legend("bottomleft", legend = c("p < 0.05", "p > 0.05"), col = c("blue", "orange"), pch = 1)
 # Verify with LMM
 
 area4 = read_csv("Data/ringarea2.csv") %>% gather(-Year, key = ID, value = ringarea) %>% filter(!is.na(ringarea)) %>% mutate(ringarea = ringarea/1e6)
 
 lmm1 <- nlme::lme(ringarea~Year, random=~1|ID, data = area4)
 summary(lmm1) # Looks good!
+
+lmm2 <- nlme::lme(ringarea~Year, random=~1|ID, data = area4 %>% filter(Year > 1995 & Year < 2011))
+summary(lmm2) # Same small effect
 
 png("Plots/INDringarea.png", width = 7, height = 7, units = "in", res = 600)
 read_csv("Data/ringarea2.csv") %>% gather(-Year, key = ID, value = ringarea) %>% filter(!is.na(ringarea)) %>% mutate(ringarea = ringarea/1e6) %>%
@@ -218,3 +269,61 @@ read_csv("Data/ringarea2.csv") %>% gather(-Year, key = ID, value = ringarea) %>%
   scale_x_continuous(breaks = c(1920, 1960, 2000),
                                        minor_breaks = NULL)
 dev.off()
+
+# Figure 0: The map of our study location
+
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(sf)
+library(ggspatial)
+library(rgeos)
+
+world <- ne_countries(scale = "medium", returnclass = "sf")
+
+png("Plots/Figure0.png", width = 5, height = 5, units = "in",res = 600)
+ggplot() +
+  geom_sf(data = world) + xlab("Longtitude") + ylab("Latitude") + 
+  coord_sf(xlim = c(-125, -95), ylim = c(65, 75), expand = FALSE) +
+  theme_minimal()+
+  annotation_north_arrow(location = "bl", which_north = "true", 
+                         # pad_x = unit(0.75, "in"), pad_y = unit(0.5, "in"),
+                         style = north_arrow_fancy_orienteering) +
+  geom_point(aes(x = c(-105.053056,-115.095,-108.083333,-108.416667),
+                 y = c(69.117222,67.825556,68.350000,68.916667)), 
+             pch = 19, size = 2) + 
+  annotate(geom = "text", x = c(-105.053056-0.5,-115.095-3,-108.083333-3.2,-108.416667-2.5), 
+           y =c(69.117222+0.75,67.825556,68.350000-0.1,68.916667+0.4), 
+           label = c("Cambridge \n Bay", "Kugluktuk", "Walker Bay", "Byron Bay"), 
+           color = 'black', size = 3)
+dev.off()
+
+# Moving analysis 11-year averages for the supplemental ----
+
+# Years to consider
+YEARS = unique(CBclimate$year)
+YEARS2 = data.frame(start = YEARS,
+                    end = YEARS + 11,
+                    middle = YEARS + 11/2) %>% filter(end <= max(YEARS) & start >= 1949)
+YEARS2$`Ring width` = NA
+YEARS2$`Ring area` = NA
+selchrono = as.numeric(rownames(dresp))
+
+
+for(i in 1:dim(YEARS2)[1]){
+  CBclimatecur = CBclimate %>% filter(year >= YEARS2$start[i] & year <= YEARS2$end[i] & month == 7)
+  
+  drespcur = dresp[selchrono >= YEARS2$start[i] & selchrono <= YEARS2$end[i],]
+  
+  areacur = area3 %>% filter(Year >= YEARS2$start[i] & Year <= YEARS2$end[i]) %>% as.data.frame()
+  
+  YEARS2$`Ring width`[i] = cor(CBclimatecur$MT, drespcur, method = 'pearson')
+  YEARS2$`Ring area`[i] = cor(CBclimatecur$MT, areacur$ringarea, method = 'pearson')
+}
+
+YEARS2 %>% write_csv("DataOut/movingcorr.csv")
+
+YEARS2 %>% select(-end, -start) %>% gather(-middle,key = `Data Type`, value = value) %>% ggplot(aes(x = middle, y = value, linetype = `Data Type`)) + geom_line() + theme_classic() + ylab("Correlation: July temperature and growth") + xlab("Center of 11-yr window")
+
+YEARS2 %>% filter(middle < 1970) %>% summarize(mean(`Ring area`), mean(`Ring width`))
+
+YEARS2 %>% filter(middle > 1980) %>% summarize(mean(`Ring area`), mean(`Ring width`))
