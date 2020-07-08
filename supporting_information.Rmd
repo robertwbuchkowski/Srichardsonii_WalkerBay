@@ -123,7 +123,7 @@ shrubcompare = shrubs %>% select(Year, stdringwidth, Nb_shrubs) %>% left_join(re
 
 ### Location of the field site and weather stations
 
-We collected shrubs from the Walker Bay field reasearch station, which is located on the Kent Penninsula (Figure 1). The climate data came from (1) a weather station operational at Walker Bay for ~5 years, (2) Environment Canada weather data from Cambridge Bay, (3) Environment Canada weather data from Byron Bay, and (4) Environment Canada weather data from Kugluktuk (Figure 1). Byron Bay is closest to Walker Bay, but has limited climate data and a different vegatation community (D. Morris, personal observation). We expected \textit{a priori} that Cambridge Bay weather data would be the best match for Walker Bay.
+We collected shrubs from the Walker Bay field reasearch station over three years (Table 1), which is located on the Kent Penninsula (Figure 1). The climate data came from (1) a weather station operational at Walker Bay for ~5 years, (2) Environment Canada weather data from Cambridge Bay, (3) Environment Canada weather data from Byron Bay, and (4) Environment Canada weather data from Kugluktuk (Figure 1). Byron Bay is closest to Walker Bay, but has limited climate data and a different vegatation community (D. Morris, personal observation). We expected \textit{a priori} that Cambridge Bay weather data would be the best match for Walker Bay.
 
 To confirm that Cambridge Bay was the most appropriate climate data, we also downloaded data from two other nearby weather stations at Kugluktuk and Byron Bay.
 
@@ -145,6 +145,25 @@ ggplot() +
            y =c(69.117222+0.75,67.825556,68.350000-0.1,68.916667+0.4), 
            label = c("Cambridge \n Bay", "Kugluktuk", "Walker Bay", "Byron Bay"), 
            color = 'black', size = 3)
+
+```
+
+```{r results = 'asis'}
+
+A1 = c("June", 2010, 17, "We randomly sampled one shrub from 12 lemming sampling grids,\none shrubs from four quardats of a predator field exclosure,\nand one shrub from a snap-trap transect.", "Krebs et al., 2012;\nDupuch et al., 2014")
+A2 = c("June", 2011, 41, "We randomly sampled forty shrubs were sampled at four\nrandom transects (500m long and 100m apart). We added one shrub\nthat was much older than the others to extend our chronology.", "No currently\npublished work")
+A3 = c("June", 2015, 12, "We randomly sampled one shrub from the same 12 lemming sampling\ngrids that were sampled in 2010.", "Dupuch et al., 2014")
+
+AA = as.data.frame(rbind(A1,A2,A3))
+rownames(AA) = NULL
+
+colnames(AA) = c("Month", "Year", "N","Description","References")
+
+
+AA %>%
+mutate_all(kableExtra::linebreak) %>%
+knitr::kable("latex", escape=F, caption = "Sampling regime for the shrubs using in our dendrochronological analysis. N is the number of shrub branches sampled, each from an individual shrub.") %>%
+kableExtra::kable_styling(full_width = F)
 
 ```
 
@@ -223,9 +242,9 @@ shortshrubst <- matrix(c(216, 184, 84, 116), nrow = 2,
                              c("Shrub", "None")))
 ```
 
-We have estimates of short and tall shrub cover from Walker Bay in 1996 and 2010. For tall shrubs  (over 25cm tall) the data produce a contingency table (Table 1) which shows no significant change in tall shrub cover (*p* = `r round(fisher.test(shrubs)$p.value,2)`). There was no change in the number of transects with shrubs (Table 2; *p* = `r round(fisher.test(shrubst)$p.value,2)`).
+We have estimates of short and tall shrub cover from Walker Bay in 1996 and 2010. For tall shrubs  (over 25cm tall) the data produce a contingency table (Table 2) which shows no significant change in tall shrub cover (*p* = `r round(fisher.test(shrubs)$p.value,2)`). There was no change in the number of transects with shrubs (Table 3; *p* = `r round(fisher.test(shrubst)$p.value,2)`).
 
-For short shrubs the data produce a contingency table (Table 3) which shows no significant change in short shrub cover (*p* = `r round(fisher.test(shortshrubs)$p.value,2)`). Significantly fewer transects had short shurbs in 2010 than 1996 (Table 4; *p* = `r round(fisher.test(shortshrubst)$p.value,2)`).
+For short shrubs the data produce a contingency table (Table 4) which shows no significant change in short shrub cover (*p* = `r round(fisher.test(shortshrubs)$p.value,2)`). Significantly fewer transects had short shurbs in 2010 than 1996 (Table 5; *p* = `r round(fisher.test(shortshrubst)$p.value,2)`).
 
 ```{r results = 'asis'}
 knitr::kable(shrubs, caption = "Tall shrub abundance for two years at 3000 points")
@@ -242,22 +261,6 @@ knitr::kable(shortshrubs, caption = "Short shrub abundance for two years at 3000
 ```{r results = 'asis'}
 knitr::kable(shortshrubst, caption = "Short shrub abundance for two years on 300 transects")
 ```
-
-```{r results = 'asis'}
-
-A1 = c("June", 2010, 17, "We randomly sampled one shrub \n from 12 lemming sampling grids, \n one shrubs from four quardats of a predator field exclosure, \n and one shrub from a \n snap-trap transect.", "Krebs et al., 2012; Dupuch et al., 2014")
-A2 = c("June", 2011, 41, "We randomly sampled forty shrubs were sampled at random four transects (500m long and 100m apart).\n  We added one shrub that \n was much older than the others to extend our chronology.", "No currently published work")
-A3 = c("June", 2015, 12, "We randomly sampled one shrub from the same 12 lemming \n sampling grids that were sampled in 2010.", "Dupuch et al., 2014")
-
-AA = as.data.frame(rbind(A1,A2,A3))
-rownames(AA) = NULL
-
-colnames(AA) = c("Month", "Year", "N","Description","References")
-
-
-knitr::kable(AA, caption = "Sampling regime for the shrubs using in our dendrochronological analysis. N is the number of shrub branches sampled, each from an individual shrub.")
-```
-
 
 ## Comparison of climate-growth relationship over time
 
@@ -313,3 +316,4 @@ read_csv("Data/ringarea2.csv") %>% gather(-Year, key = ID, value = ringarea) %>%
                                        minor_breaks = NULL)
 
 ```
+
