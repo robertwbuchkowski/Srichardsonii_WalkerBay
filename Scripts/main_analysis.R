@@ -34,6 +34,19 @@ ay2 = ay2 %>%
 plot(age~Year, data = ay2)
 
 cor(ay2$age,ay2$Year, method = "pearson")
+cor.test(ay2$age,ay2$Year, method = "pearson")
+
+ay3 = ay2 %>% group_by(Shrub) %>% 
+  summarize(age = min(age)) %>%
+  left_join(ay2)
+
+cor.test(ay3$age, ay3$Year, method = "pearson")
+plot(age~Year, data = ay3)
+
+ay4 = ay2 %>% group_by(Year) %>% summarize(age = mean(age))
+
+cor.test(ay4$age, ay4$Year, method = "pearson")
+plot(age~Year, data = ay4)
 
 # Return to analysis ----
 
@@ -44,6 +57,17 @@ d1 = d1 %>%
   summarize(N = n(), sd = sd(ringwidth), chrono = mean(ringwidth))
 
 shrubs = read.csv("Data/shrubs.csv")
+
+#Mean sensitivity
+sens1(shrubs$stdringwidth)
+# First-order autocorrelation
+acf(shrubs$stdringwidth, lag = 1, plot = F)
+
+# Mean correlation:
+ay1_temp = ay1
+ay1_temp$Year = NULL
+rwi.stats(ay1_temp)
+rm(ay1_temp)
 
 # QCQA: Verify that the two calculated chronologies are the same.
 plot(shrubs$stdringwidth, d1$chrono); abline(0,1)
@@ -66,6 +90,12 @@ dresp$N = NULL
 
 # This is the custom dcc function with higher replication
 respCB = dcc_RWB(chrono = dresp, clim = CBclimate, method = "response", start = -6, end = 9)
+
+dresp2 = data.frame(chrono = dresp[rownames(dresp) > 1949,])
+rownames(dresp2) = seq(1949, by = 1, length = dim(dresp2)[1])
+CBclimate[1,3:4] = CBclimate[2,3:4]
+respCB_treeclim = treeclim::dcc(dresp2, CBclimate)
+plot(respCB_treeclim)
 
 respCB$ID = rownames(respCB)
 rownames(respCB) = NULL
@@ -159,6 +189,16 @@ p1 = area %>%
   ggplot(aes(x = Year, y = ringarea)) + 
   geom_line() + theme_classic() + 
   scale_x_continuous(breaks = seq(1920, 2020, by = 10)) + ylab(expression(Ring~area~(mm^2)))
+
+# check the response function with the ring area vector
+
+dresparea = data.frame(chrono = area$ringarea)
+rownames(dresparea) = area$Year
+
+respCBarea = dcc_RWB(chrono = dresparea, clim = CBclimate, method = "response", start = -6, end = 9)
+
+rm(dresparea)
+dcplot(respCBarea) # yes the July temperature variable is still significant, now so is the past June, but not confident in that result
 
 # Load in the raw data 
 area2 = read_csv("Data/ringarea2.csv") %>% gather(-Year, key = ID, value = ringarea) %>% filter(!is.na(ringarea)) %>% mutate(ringarea = ringarea/1e6) %>% group_by(Year) %>%
@@ -259,6 +299,32 @@ summary(lmm1) # Looks good!
 lmm2 <- nlme::lme(ringarea~Year, random=~1|ID, data = area4 %>% filter(Year > 1995 & Year < 2011))
 summary(lmm2) # Same small effect
 
+# Run a loop testing how many shrubs would be needed:
+listshrubs = unique(area4$ID)
+Nshrubs = length(listshrubs) 
+
+out1 = array(NA, dim = c(53,2,100))
+
+for(j in 1:100){
+  for(i in 1:53){
+    
+    SS = base::sample(listshrubs, i)
+    
+    lmm1 <- nlme::lme(ringarea~Year, random=~1|ID, data = area4 %>% filter(ID %in% SS))
+    
+    out1[i,1,j] = summary(lmm1)$coefficients$fixed[2]
+    out1[i,2,j] = summary(lmm1)$tTable[2,5]
+  }
+}
+
+out2 = apply(out1, c(1,2), FUN = mean)
+out2sd = apply(out1, c(1,2), FUN = sd)
+
+plot(out2[,1]~seq(1:53))
+plot(out2sd[,1]~seq(1:53))
+plot(out2[,2]~seq(1:53))
+# Conclusion: need over 10 shrubs from 1 site to get a robust relationship over time.
+
 png("Plots/INDringarea.png", width = 7, height = 7, units = "in", res = 600)
 read_csv("Data/ringarea2.csv") %>% gather(-Year, key = ID, value = ringarea) %>% filter(!is.na(ringarea)) %>% mutate(ringarea = ringarea/1e6) %>%
   ggplot(aes(x=Year, y=ringarea)) +
@@ -269,6 +335,15 @@ read_csv("Data/ringarea2.csv") %>% gather(-Year, key = ID, value = ringarea) %>%
   scale_x_continuous(breaks = c(1920, 1960, 2000),
                                        minor_breaks = NULL)
 dev.off()
+
+# Look at the ring series statistics for the area series
+
+area5 = area4 %>% spread(key = ID, value = ringarea) %>% as.data.frame()
+
+rownames(area5) = area5$Year
+area5$Year = NULL
+
+rwi.stats(area5)
 
 # Figure 0: The map of our study location
 
