@@ -162,7 +162,7 @@ colnames(AA) = c("Month", "Year", "N","Description","References")
 
 AA %>%
 mutate_all(kableExtra::linebreak) %>%
-knitr::kable("latex", escape=F, caption = "Sampling regime for the shrubs using in our dendrochronological analysis. N is the number of shrub branches sampled, each from an individual shrub.") %>%
+knitr::kable("latex", escape=F, caption = "Sampling regime for the shrubs using in our dendrochronological analysis. N is the number of shrub stems sampled, each from an individual shrub.") %>%
 kableExtra::kable_styling(full_width = F)
 
 ```
