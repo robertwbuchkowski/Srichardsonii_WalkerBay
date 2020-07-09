@@ -69,6 +69,32 @@ ay1_temp$Year = NULL
 rwi.stats(ay1_temp)
 rm(ay1_temp)
 
+# Check statistics on the raw chronologies
+rawdata<- read_csv("Data/raw_ring_data_June2019.csv")
+rwdu <- read_csv("Data/final_chron_used_mod.csv")
+
+rawdata = rawdata %>% gather(-Year, key=ID, value=raw) %>%
+  separate(ID, into =c("ID1", "ID2"), sep="-") %>%
+  mutate(ID2 = str_pad(ID2, width = 3, side="right", pad= "_")) %>%
+  mutate(ID2 = str_pad(ID2, width = 4, side="right", pad= "2")) %>%
+  filter(!is.na(raw)) %>% 
+  separate(ID2, into =c("ID2", "radius"), sep="_") %>%
+  mutate(ID = paste0(ID1, "-", ID2)) %>%
+  select(-ID1, -ID2) %>%
+  group_by(Year, ID) %>%
+  summarize(raw = mean(raw))%>%
+  ungroup() %>%
+  right_join(rwdu) %>% 
+  spread(key = ID, value = raw)
+rm(rwdu)
+
+rawdata = as.data.frame(rawdata)
+rownames(rawdata) = rawdata$Year
+rawdata$Year = NULL
+head(rawdata)
+rwi.stats(rawdata)
+
+
 # QCQA: Verify that the two calculated chronologies are the same.
 plot(shrubs$stdringwidth, d1$chrono); abline(0,1)
 
@@ -284,13 +310,17 @@ for(i in 1:dim(outmove)[1]){
   outmove$p[i] = summary(m1_mod)$coefficients[2,4]
 }
 
-outmove$sig = ifelse(outmove$p < 0.05, "blue", "orange")
+outmove$sig = ifelse(outmove$p < 0.05, "Yes", "No")
+outmove$focus = ifelse(outmove$start ==1996, "Yes", "No")
 
-plot(coeff~start, outmove, col = sig, type = "b", ylab = "Year Coefficient", xlab = "Start of 14-yr window")
-abline(v = 1996, lty = 2)
-legend("bottomleft", legend = c("p < 0.05", "p > 0.05"), col = c("blue", "orange"), pch = 1)
+write_csv(outmove, "DataOut/outmove.csv")
+
+# Plot to be added to supplemental
+read_csv("DataOut/outmove.csv") %>% ggplot(aes(x = start, y = coeff))+ geom_hline(yintercept = 0, lty = 2) + geom_line() + geom_point(aes(col = sig, shape = focus), size = 2) + theme_classic() + xlab("Start of 14-yr window") + ylab("Coefficient (Year)") +
+  scale_color_manual(values = c("blue", "orange"), name = "Significant?") + scale_shape_discrete(guide = F)
+
+
 # Verify with LMM
-
 area4 = read_csv("Data/ringarea2.csv") %>% gather(-Year, key = ID, value = ringarea) %>% filter(!is.na(ringarea)) %>% mutate(ringarea = ringarea/1e6)
 
 lmm1 <- nlme::lme(ringarea~Year, random=~1|ID, data = area4)

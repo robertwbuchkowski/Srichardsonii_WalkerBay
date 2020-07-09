@@ -266,7 +266,7 @@ knitr::kable(shortshrubst, caption = "Short shrub abundance for two years on 300
 
 The climate-growth relationship was not constant over time and the relationship between mean July temperature and shurb growth strengthened significantly in the 1970's (Figure 7).
 
-```{r, echo=F,message = F, fig.width=10, fig.height=10,fig.cap="The trends in the relationship between July temperature and growth over time using an 11-year moving window centered on the year displayed on the x-axis. The trends are the same for ring width and ring area."}
+```{r, echo=F,message = F, fig.width=10, fig.height=5,fig.cap="The trends in the relationship between July temperature and growth over time using an 11-year moving window centered on the year displayed on the x-axis. The trends are the same for ring width and ring area."}
 read_csv("DataOut/movingcorr.csv") %>% select(-end, -start) %>% gather(-middle,key = `Data Type`, value = value) %>% ggplot(aes(x = middle, y = value, linetype = `Data Type`)) + geom_line() + theme_classic() + ylab("Correlation: July temperature and growth") + xlab("Center of 11-yr window")
 
 ```
@@ -315,5 +315,10 @@ read_csv("Data/ringarea2.csv") %>% gather(-Year, key = ID, value = ringarea) %>%
   scale_x_continuous(breaks = c(1920, 1960, 2000),
                                        minor_breaks = NULL)
 
+```
+
+```{r, echo=F,message = F, fig.width=10, fig.height=5,fig.cap="The linear model coefficient and significance for all possible 14-year time windows in our chronology related basal area increment to year. The analysis shows variable significance over time which is closely aligned with the interannual variability present in that 14-year window (See main text figure). The triangle indicates the 14-year period that matches the shrub cover data."}
+read_csv("DataOut/outmove.csv") %>% ggplot(aes(x = start, y = coeff))+ geom_hline(yintercept = 0, lty = 2) + geom_line() + geom_point(aes(col = sig, shape = focus), size = 2) + theme_classic() + xlab("Start of 14-yr window") + ylab("Coefficient (Year)") +
+  scale_color_manual(values = c("blue", "orange"), name = "Significant?") + scale_shape_discrete(guide = F)
 ```
 
