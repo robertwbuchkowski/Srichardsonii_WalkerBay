@@ -15,6 +15,20 @@ d2 = read.csv("Data/list_to_include.csv")
 
 all(d1$Shrub %in% d2$Shrub)
 
+# Check statistics on the raw chronologies
+
+for_stats = d2 %>% 
+  full_join(d1) %>%
+  filter(Include == "Oui") %>% # remove the shrubs that were cross-dated out
+  pivot_wider(names_from = Shrub, values_from = ringwidth) %>%
+  select(-Include) %>%
+  data.frame()
+
+rownames(for_stats) = for_stats$Year
+for_stats$Year = NULL
+
+rwi.stats(for_stats)
+
 # Compare age and year ----
 
 ay1 = read.csv("Data/shrubs_full.csv")
@@ -69,7 +83,6 @@ ay1_temp$Year = NULL
 rwi.stats(ay1_temp)
 rm(ay1_temp)
 
-# Check statistics on the raw chronologies
 rawdata<- read_csv("Data/raw_ring_data_June2019.csv")
 rwdu <- read_csv("Data/final_chron_used_mod.csv")
 
@@ -91,9 +104,7 @@ rm(rwdu)
 rawdata = as.data.frame(rawdata)
 rownames(rawdata) = rawdata$Year
 rawdata$Year = NULL
-head(rawdata)
 rwi.stats(rawdata)
-
 
 # QCQA: Verify that the two calculated chronologies are the same.
 plot(shrubs$stdringwidth, d1$chrono); abline(0,1)
@@ -107,7 +118,6 @@ CBclimate = read.csv("Data/en_climate_monthly_NU_2400600_1929-2015_P1M.csv") %>%
 
 
 # Response function analysis ----
-
 dresp = data.frame(d1)
 rownames(dresp) = dresp$Year
 dresp$Year = NULL
@@ -117,11 +127,7 @@ dresp$N = NULL
 # This is the custom dcc function with higher replication
 respCB = dcc_RWB(chrono = dresp, clim = CBclimate, method = "response", start = -6, end = 9)
 
-dresp2 = data.frame(chrono = dresp[rownames(dresp) > 1949,])
-rownames(dresp2) = seq(1949, by = 1, length = dim(dresp2)[1])
-CBclimate[1,3:4] = CBclimate[2,3:4]
-respCB_treeclim = treeclim::dcc(dresp2, CBclimate)
-plot(respCB_treeclim)
+dcplot(dcc(chrono = dresp, clim = CBclimate, method = "correlation", start = -6, end = 9))
 
 respCB$ID = rownames(respCB)
 rownames(respCB) = NULL
@@ -156,7 +162,7 @@ shrubs2[,"Pred"] = pred.m1
 
 GT = tibble(X = c(1960,1960),
             Y = c(-11.5,-12),
-            L = c("italic(R)^2==0.32","italic(p)<0.0001"))
+            L = c("italic(R)^2==0.32","italic(p)<0.001"))
 
 p1 = shrubs2 %>% 
   ggplot(aes(x = Year, y = MeantempAnnual)) + 
@@ -190,6 +196,11 @@ m1_precip = lm(TotalPrecipAnnual~Year, data=shrubs2 %>% filter(Year > 1995 & Yea
 summary(m1_precip)
 plot(m1_precip)
 
+# Check whether the annual temperature has increased from 1996 to 2010:
+m1_short = lm(MeantempAnnual~Year, data=shrubs2 %>% filter(Year > 1995 & Year < 2010))
+summary(m1_short)
+plot(m1_short)
+
 png("Plots/Figure1.png", width = 5, height = 7, units = "in", res = 600)
 ggpubr::ggarrange(p1,p2, labels = "AUTO", ncol = 1, nrow = 2)
 dev.off()     
@@ -217,7 +228,6 @@ p1 = area %>%
   scale_x_continuous(breaks = seq(1920, 2020, by = 10)) + ylab(expression(Ring~area~(mm^2)))
 
 # check the response function with the ring area vector
-
 dresparea = data.frame(chrono = area$ringarea)
 rownames(dresparea) = area$Year
 
@@ -248,7 +258,6 @@ p1 = area2 %>%
   geom_line(aes(y = Pred), col = "blue") + 
   scale_x_continuous(breaks = seq(1920, 2020, by = 10)) + ylab(expression(Ring~area~(mm^2))) +
   geom_text(aes(x = X, y = Y, label = L), data = GT, parse = T)
-
 
 # Breakpoint analysis:
 m1_breakpoint = segmented::segmented(m1)
@@ -298,7 +307,6 @@ m1_mod = lm(ringarea~Year, data = area2 %>% filter(Year > 1995 & Year < 2011)); 
 plot(m1_mod)
 
 # Test over all 14 year periods in the data set
-
 outmove = data.frame(start = 1922:2000,
            end = 1936:2014, 
            coeff = NA,
@@ -367,7 +375,6 @@ read_csv("Data/ringarea2.csv") %>% gather(-Year, key = ID, value = ringarea) %>%
 dev.off()
 
 # Look at the ring series statistics for the area series
-
 area5 = area4 %>% spread(key = ID, value = ringarea) %>% as.data.frame()
 
 rownames(area5) = area5$Year
