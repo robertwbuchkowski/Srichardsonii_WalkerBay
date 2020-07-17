@@ -26,11 +26,9 @@ for_stats = d2 %>%
 
 rownames(for_stats) = for_stats$Year
 for_stats$Year = NULL
-
 rwi.stats(for_stats)
 
 # Compare age and year ----
-
 ay1 = read.csv("Data/shrubs_full.csv")
 ay2 = ay1
 
@@ -72,7 +70,7 @@ d1 = d1 %>%
 
 shrubs = read.csv("Data/shrubs.csv")
 
-#Mean sensitivity
+# Mean sensitivity
 sens1(shrubs$stdringwidth)
 # First-order autocorrelation
 acf(shrubs$stdringwidth, lag = 1, plot = F)
@@ -105,6 +103,25 @@ rawdata = as.data.frame(rawdata)
 rownames(rawdata) = rawdata$Year
 rawdata$Year = NULL
 rwi.stats(rawdata)
+
+for_rs = rawdata %>% gather(-Year, key=ID, value=raw) %>%
+  separate(ID, into =c("ID1", "ID2"), sep="-") %>%
+  mutate(ID2 = str_pad(ID2, width = 3, side="right", pad= "_")) %>%
+  mutate(ID2 = str_pad(ID2, width = 4, side="right", pad= "2")) %>%
+  filter(!is.na(raw)) %>% 
+  separate(ID2, into =c("ID2", "radius"), sep="_") %>%
+  mutate(ID = paste0(ID1, "-", ID2)) %>%
+  right_join(rwdu) %>%
+  mutate(ID = paste0(ID1, "-", ID2, "-", radius)) %>%
+  select(-ID1, -ID2, -radius) %>%
+  pivot_wider(names_from = ID, values_from = raw) %>% data.frame()
+
+rownames(for_rs) = for_rs$Year
+for_rs$Year = NULL
+
+autoread.ids(for_rs)
+
+rwi.stats(for_rs, ids = autoread.ids(for_rs))
 
 # QCQA: Verify that the two calculated chronologies are the same.
 plot(shrubs$stdringwidth, d1$chrono); abline(0,1)
