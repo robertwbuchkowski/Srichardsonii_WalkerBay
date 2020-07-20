@@ -15,19 +15,6 @@ d2 = read.csv("Data/list_to_include.csv")
 
 all(d1$Shrub %in% d2$Shrub)
 
-# Check statistics on the raw chronologies
-
-for_stats = d2 %>% 
-  full_join(d1) %>%
-  filter(Include == "Oui") %>% # remove the shrubs that were cross-dated out
-  pivot_wider(names_from = Shrub, values_from = ringwidth) %>%
-  select(-Include) %>%
-  data.frame()
-
-rownames(for_stats) = for_stats$Year
-for_stats$Year = NULL
-rwi.stats(for_stats)
-
 # Compare age and year ----
 ay1 = read.csv("Data/shrubs_full.csv")
 ay2 = ay1
@@ -60,7 +47,7 @@ ay4 = ay2 %>% group_by(Year) %>% summarize(age = mean(age))
 cor.test(ay4$age, ay4$Year, method = "pearson")
 plot(age~Year, data = ay4)
 
-# Return to analysis ----
+# Calculate generic ring width statistics -----
 
 d1 = d1 %>% 
   left_join(d2) %>%
@@ -72,38 +59,12 @@ shrubs = read.csv("Data/shrubs.csv")
 
 # Mean sensitivity
 sens1(shrubs$stdringwidth)
-# First-order autocorrelation
-acf(shrubs$stdringwidth, lag = 1, plot = F)
 
-# Mean correlation:
-ay1_temp = ay1
-ay1_temp$Year = NULL
-rwi.stats(ay1_temp)
-rm(ay1_temp)
-
+# Load in raw data 
 rawdata<- read_csv("Data/raw_ring_data_June2019.csv")
 rwdu <- read_csv("Data/final_chron_used_mod.csv")
 
-rawdata = rawdata %>% gather(-Year, key=ID, value=raw) %>%
-  separate(ID, into =c("ID1", "ID2"), sep="-") %>%
-  mutate(ID2 = str_pad(ID2, width = 3, side="right", pad= "_")) %>%
-  mutate(ID2 = str_pad(ID2, width = 4, side="right", pad= "2")) %>%
-  filter(!is.na(raw)) %>% 
-  separate(ID2, into =c("ID2", "radius"), sep="_") %>%
-  mutate(ID = paste0(ID1, "-", ID2)) %>%
-  select(-ID1, -ID2) %>%
-  group_by(Year, ID) %>%
-  summarize(raw = mean(raw))%>%
-  ungroup() %>%
-  right_join(rwdu) %>% 
-  spread(key = ID, value = raw)
-rm(rwdu)
-
-rawdata = as.data.frame(rawdata)
-rownames(rawdata) = rawdata$Year
-rawdata$Year = NULL
-rwi.stats(rawdata)
-
+# Prepare raw data for statistics that rely on individual cores
 for_rs = rawdata %>% gather(-Year, key=ID, value=raw) %>%
   separate(ID, into =c("ID1", "ID2"), sep="-") %>%
   mutate(ID2 = str_pad(ID2, width = 3, side="right", pad= "_")) %>%
@@ -119,12 +80,32 @@ for_rs = rawdata %>% gather(-Year, key=ID, value=raw) %>%
 rownames(for_rs) = for_rs$Year
 for_rs$Year = NULL
 
-autoread.ids(for_rs)
-
 rwi.stats(for_rs, ids = autoread.ids(for_rs))
+
+# Prepare raw data for statistics calculated on individual shrubs
+for_rwl = rawdata %>% gather(-Year, key=ID, value=raw) %>%
+  separate(ID, into =c("ID1", "ID2"), sep="-") %>%
+  mutate(ID2 = str_pad(ID2, width = 3, side="right", pad= "_")) %>%
+  mutate(ID2 = str_pad(ID2, width = 4, side="right", pad= "2")) %>%
+  filter(!is.na(raw)) %>% 
+  separate(ID2, into =c("ID2", "radius"), sep="_") %>%
+  mutate(ID = paste0(ID1, "-", ID2)) %>%
+  right_join(rwdu) %>%
+  mutate(ID = paste0(ID1, "-", ID2)) %>%
+  select(-ID1, -ID2, -radius) %>%
+  group_by(Year, ID) %>%
+  summarize(raw = mean(raw)) %>%
+  pivot_wider(names_from = ID, values_from = raw) %>% data.frame()
+
+rownames(for_rwl) = for_rwl$Year
+for_rwl$Year = NULL
+
+rwl.report(for_rwl)
 
 # QCQA: Verify that the two calculated chronologies are the same.
 plot(shrubs$stdringwidth, d1$chrono); abline(0,1)
+
+# Return to main analysis ----
 
 # Load the climate data
 CBclimate = read.csv("Data/en_climate_monthly_NU_2400600_1929-2015_P1M.csv") %>%
