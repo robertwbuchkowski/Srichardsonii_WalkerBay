@@ -1,6 +1,6 @@
 ---
 title: "Supporting Information"
-subtitle: An increase in mean temperature promotes shrub growth but not expansion in the Central Canadian Arctic
+subtitle: Warmer temperatures promote shrub radial growth but not cover in the Central Canadian Arctic
 output:
   pdf_document: default
 ---
@@ -150,9 +150,9 @@ ggplot() +
 
 ```{r results = 'asis'}
 
-A1 = c("June", 2010, 17, "We randomly sampled one shrub from 12 lemming sampling grids,\none shrubs from four quardats of a predator field exclosure,\nand one shrub from a snap-trap transect.", "Krebs et al., 2012;\nDupuch et al., 2014")
-A2 = c("June", 2011, 41, "We randomly sampled forty shrubs were sampled at four\nrandom transects (500m long and 100m apart). We added one shrub\nthat was much older than the others to extend our chronology.", "No currently\npublished work")
-A3 = c("June", 2015, 12, "We randomly sampled one shrub from the same 12 lemming sampling\ngrids that were sampled in 2010.", "Dupuch et al., 2014")
+A1 = c("June", 2010, 17, "We randomly sampled one shrub from 12 lemming sampling grids,\none shrub from four quardats of a predator field exclosure,\nand one shrub from a snap-trap transect.", "Krebs et al., 2012;\nDupuch et al., 2014")
+A2 = c("June", 2011, 41, "We randomly sampled forty shrubs at four\nrandom transects (500m long and 100m apart). We added one shrub\nthat was much older than the others to extend our chronology.", "No currently\npublished work")
+A3 = c("June", 2015, 12, "We randomly sampled one shrub adjacent to the same 12 lemming sampling\ngrids that were sampled in 2010.", "Dupuch et al., 2014")
 
 AA = as.data.frame(rbind(A1,A2,A3))
 rownames(AA) = NULL
@@ -168,7 +168,7 @@ kableExtra::kable_styling(full_width = F)
 ```
 
 ###Walker Bay Climate Data
-The temperature and precipitation data from a weather station at Walker Bay is available from `r min(WB$Year)` to `r max(WB$Year)`. Annual average temperature did not change during this interval (Figure 2a). The shrub growth recorded at Walker Bay from  `r min(WB$Year)` to `r max(WB$Year)` was not significantly related to annual temperature (*p* > 0.5; Figure 2b) although there was a marginally significant relationship with July temperature (*p* = 0.051; Figure 2c).   
+The temperature and precipitation data from a weather station at Walker Bay are available from `r min(WB$Year)` to `r max(WB$Year)`. Annual average temperature did not change during this interval (Figure 2a). The shrub growth recorded at Walker Bay from  `r min(WB$Year)` to `r max(WB$Year)` was not significantly related to annual temperature (*p* > 0.5; Figure 2b) although there was a marginally significant relationship with July temperature (*p* = 0.051; Figure 2c).   
 
 ```{r, echo=F, message = F, fig.width=10, fig.height=5,fig.cap="The climate data from Walker Bay its relationship with shrub growth. Temperature (a), annual temperature versus shrub growth(b), and July temperature versus shrub growth (c)."}
 pp1 = WB %>% group_by(Year) %>%
@@ -200,7 +200,7 @@ dcplot(respcopper, vertical = F)
 ```
 
 ###Byron Bay Climate Data
-The temperature and precipitation data from a weather station at Byron Bay are available from `r min(bryonbay$Year)` to `r max(bryonbay$Year)`. Annual average temperature did not change over this interval (*p* > 0.78). The shrub growth at Walker Bay from `r min(bryonbay$Year)` to `r max(bryonbay$Year)` was not significantly related to Byron Bay annual temperature (*p* > 0.7) nor there was a  significant relationship with July temperature (*p* > 0.2; Figure 3b).  
+The temperature and precipitation data from a weather station at Byron Bay are available from `r min(bryonbay$Year)` to `r max(bryonbay$Year)`. Annual average temperature did not change over this interval (*p* > 0.78). The shrub growth at Walker Bay from `r min(bryonbay$Year)` to `r max(bryonbay$Year)` was not significantly related to Byron Bay annual temperature (*p* > 0.7) nor was there sa  significant relationship with July temperature (*p* > 0.2; Figure 3b).  
 There were enough data for Byron Bay to repeat the response function analysis comparing Walker Bay shrubs to Byron Bay climate records. April temperature during the growth year at Byron Bay was a significant predictor of shrub radial growth at Walker Bay. All other response function coefficients were not significant (Figure 5). We are cautious to interpret the significant response function coefficient for April as mechanistic, because the climate time series for Byron Bay (1962 - 1991) is much shorter than the one available for Cambridge Bay (1949 - present). In fact, reanalyzing the climate-growth relationship for Cambridge Bay using the same years as there are data for Byron Bay produces a new significant response function coefficient (April total percipitation) that is not significant for the full dataset. In summary, there is limited evidence that spring temperature might be important for shrubs at Walker Bay, but it is not strong enough to be conclusive with the current dataset. 
 
 ```{r, echo=F,message = F, fig.width=10, fig.height=8,fig.cap="April temperature in the growth year at Byron Bay had a significant response function coefficient. Lower case letters indicate months in the year before shrub growth, while capital letters indicate months in the year of shrub growth. MeanT = Mean Temperature; TotP = Total Precipitation"}
@@ -317,8 +317,10 @@ read_csv("Data/ringarea2.csv") %>% gather(-Year, key = ID, value = ringarea) %>%
 
 ```
 
-```{r, echo=F,message = F, fig.width=10, fig.height=5,fig.cap="The linear model coefficient and significance for all possible 14-year time windows in our chronology related basal area increment to year. The analysis shows variable significance over time which is closely aligned with the interannual variability present in that 14-year window (See main text figure). The triangle indicates the 14-year period that matches the shrub cover data."}
-read_csv("DataOut/outmove.csv") %>% ggplot(aes(x = start, y = coeff))+ geom_hline(yintercept = 0, lty = 2) + geom_line() + geom_point(aes(col = sig, shape = focus), size = 2) + theme_classic() + xlab("Start of 14-yr window") + ylab("Coefficient (Year)") +
-  scale_color_manual(values = c("blue", "orange"), name = "Significant?") + scale_shape_discrete(guide = F)
+```{r, echo=F,message = F, fig.width=10, fig.height=5,fig.cap="The linear model coefficient and significance for all possible 14-year time windows in our chronology related basal area increment to year. The analysis shows variable significance over time which is closely aligned with the interannual variability present in that 14-year window (See main text figure). The triangle indicates the coefficient calculated from the 14-year period that matches the shrub cover data."}
+read_csv("DataOut/outmove.csv") %>% ggplot(aes(x = start, y = coeff))+ geom_hline(yintercept = 0, lty = 2) + geom_line() + geom_point(aes(col = sig, shape = focus,size = sig)) + theme_classic() + xlab("Start of 14-yr window") + ylab("Coefficient (Year)") +
+  scale_color_manual(values = c("blue", "orange"), name = "Significant?") +
+  scale_shape_manual(values = c(19, 2),guide = F) + 
+  scale_size_manual(values = c(2, 3),guide = F)
 ```
 
