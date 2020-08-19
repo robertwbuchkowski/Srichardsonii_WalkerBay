@@ -130,23 +130,40 @@ dcplot(dcc(chrono = dresp, clim = CBclimate, method = "correlation", start = -6,
 respCB$ID = rownames(respCB)
 rownames(respCB) = NULL
 
-p1 = respCB %>% separate(ID, into = c("variable", "year", "month"), sep =c(2,8)) %>%
+# Analysis of 1996 to 2010
+respCB2 = dcc_RWB(chrono = data.frame(chrono = dresp[rownames(dresp) %in% seq(1996,2010,by=1),], row.names = seq(1996,2010,1))
+                  , clim = CBclimate, method = "response", start = 3, end = 9)
+
+respCB2$ID = rownames(respCB2)
+rownames(respCB2) = NULL
+
+respCB_plot = respCB %>% separate(ID, into = c("variable", "year", "month"), sep =c(2,8)) %>%
   mutate(Month = rep(c("jn", "ju", "au", "se", "oc", "no", "de", "Ja", "Fe", "Mr", "Ap", "Ma", "Jn", "Ju", "Au", "Se"), 2)) %>%
   select(-year, -month) %>%
+  mutate(ID = "1948-2013") %>%
+  bind_rows(
+    respCB2 %>% separate(ID, into = c("variable", "year", "month"), sep =c(2,8)) %>%
+      mutate(Month = rep(c("Mr", "Ap", "Ma", "Jn", "Ju", "Au", "Se"), 2)) %>%
+      select(-year, -month) %>%
+      mutate(ID = "1996-2010")
+  )
+
+
+p1 = respCB_plot  %>%
   filter(variable == "MT") %>%
   ggplot(aes(x = Month, y = coef, color = significant)) + 
-  geom_hline(yintercept = 0, linetype = 2) + geom_point() + theme_classic() + geom_errorbar(aes(ymin = ci.lower, ymax = ci.upper)) + 
+  geom_hline(yintercept = 0, linetype = 2) + geom_point(aes(shape = ID)) + theme_classic() + geom_errorbar(aes(ymin = ci.lower, ymax = ci.upper, linetype = ID)) + 
   scale_x_discrete(limits = c("jn", "ju", "au", "se", "oc", "no", "de", "Ja", "Fe", "Mr", "Ap", "Ma", "Jn", "Ju", "Au", "Se")) +
-  scale_color_manual(values = c("grey", "black")) + ylab("Response coefficient") + theme(legend.position = "none") + ggtitle("Average temperature  (\u00B0C)")
+  scale_color_manual(values = c("grey", "black")) + ylab("Response coefficient") + theme(legend.position = "none") + ggtitle("Average temperature  (\u00B0C)") + 
+  scale_shape_manual(values = c(19,1))
 
-p2 = respCB %>% separate(ID, into = c("variable", "year", "month"), sep =c(2,8)) %>%
-  mutate(Month = rep(c("jn", "ju", "au", "se", "oc", "no", "de", "Ja", "Fe", "Mr", "Ap", "Ma", "Jn", "Ju", "Au", "Se"), 2)) %>%
-  select(-year, -month) %>%
+p2 = respCB_plot  %>%
   filter(variable == "TP") %>%
   ggplot(aes(x = Month, y = coef, color = significant)) + 
-  geom_hline(yintercept = 0, linetype = 2) + geom_point() + theme_classic() + geom_errorbar(aes(ymin = ci.lower, ymax = ci.upper)) + 
+  geom_hline(yintercept = 0, linetype = 2) + geom_point(aes(shape = ID)) + theme_classic() + geom_errorbar(aes(ymin = ci.lower, ymax = ci.upper, linetype = ID)) + 
   scale_x_discrete(limits = c("jn", "ju", "au", "se", "oc", "no", "de", "Ja", "Fe", "Mr", "Ap", "Ma", "Jn", "Ju", "Au", "Se")) +
-  scale_color_manual(values = c("grey", "black")) + ylab("Response coefficient") + theme(legend.position = "none") + ggtitle("Total precipitation (mm)")
+  scale_color_manual(values = c("grey", "black")) + ylab("Response coefficient") + theme(legend.position = "none") +
+  scale_shape_manual(values = c(19,1)) + ggtitle("Total precipitation (mm)")
 
 png("Plots/Figure3.png", width = 5, height = 7, units = "in", res = 600)
 ggpubr::ggarrange(p1,p2, labels = "AUTO", ncol = 1, nrow = 2)
@@ -162,42 +179,58 @@ GT = tibble(X = c(1960,1960),
             Y = c(-11.5,-12),
             L = c("italic(R)^2==0.32","italic(p)<0.001"))
 
+m2 = lm(MeantempAnnual~Year, data=shrubs2 %>% filter(Year > 1995 & Year < 2011))
+pred.m2 = predict(m2, newdata = data.frame(Year = seq(1996, 2010, 1)))
+shrubs2[,"Pred2"] = NA 
+shrubs2[shrubs2$Year > 1995 & shrubs2$Year <2011, "Pred2"] = pred.m2
+
+GT2 = tibble(X = c(1980,1980),
+            Y = c(-11.5,-12),
+            L = c("italic(R)^2==0","italic(p)==0.65"))
+
 p1 = shrubs2 %>% 
   ggplot(aes(x = Year, y = MeantempAnnual)) + 
   geom_point(shape = 1) + theme_classic() + 
   scale_x_continuous(breaks = seq(1940, 2020, by = 10)) +
-  geom_text(aes(x = X, y = Y, label = L), data = GT, parse = T) +
-  geom_line(aes(y = Pred), col = "blue") + ylab("Mean Temperature (\u00B0C)")
+  geom_text(aes(x = X, y = Y, label = L), data = GT, parse = T, color = "blue") +
+  geom_text(aes(x = X, y = Y, label = L), data = GT2, parse = T, color = "orange") +
+  geom_line(aes(y = Pred), col = "blue") + 
+  geom_line(aes(y = Pred2), col = "orange") + 
+  ylab("Mean Temperature (\u00B0C)")
 
 m1 = lm(MeantempJuly~Year, data=shrubs2)
 pred.m1 = predict(m1, newdata = data.frame(Year = seq(1948, 2013, 1)))
 shrubs2[,"Pred"] = pred.m1
 
+m2 = lm(MeantempJuly~Year, data=shrubs2 %>% filter(Year > 1995 & Year < 2011))
+pred.m2 = predict(m2, newdata = data.frame(Year = seq(1996, 2010, 1)))
+shrubs2[,"Pred2"] = NA 
+shrubs2[shrubs2$Year > 1995 & shrubs2$Year <2011, "Pred2"] = pred.m2
+
+
+
 GT = tibble(X = c(1960,1960),
             Y = c(12,11.5),
             L = c("italic(R)^2==0.15","italic(p)<0.001"))
+
+GT2 = tibble(X = c(1980,1980),
+             Y = c(12,11.5),
+             L = c("italic(R)^2==0","italic(p)==0.39"))
 
 p2 = shrubs2 %>% 
   ggplot(aes(x = Year, y = MeantempJuly)) + 
   geom_point(shape = 1) + theme_classic() + 
   scale_x_continuous(breaks = seq(1940, 2020, by = 10)) + 
-  geom_text(aes(x = X, y = Y, label = L), data = GT, parse = T) +
-  geom_line(aes(y = Pred), col = "blue") + ylab("Mean July Temperature (\u00B0C)")
-
-# Check whether the July temperature has increased from 1996 to 2010:
-m1_short = lm(MeantempJuly~Year, data=shrubs2 %>% filter(Year > 1995 & Year < 2010))
-summary(m1_short)
-plot(m1_short)
+  geom_text(aes(x = X, y = Y, label = L), data = GT, parse = T, color = "blue") +
+  geom_text(aes(x = X, y = Y, label = L), data = GT2, parse = T, color = "orange") +
+  geom_line(aes(y = Pred), col = "blue") + 
+  geom_line(aes(y = Pred2), col = "orange") + 
+  ylab("Mean July Temperature (\u00B0C)")
 
 # Check whether total precipiration has changed from 1996 to 2010:
-m1_precip = lm(TotalPrecipAnnual~Year, data=shrubs2 %>% filter(Year > 1995 & Year < 2010))
+m1_precip = lm(TotalPrecipAnnual~Year, data=shrubs2 %>% filter(Year > 1995 & Year < 2011))
 summary(m1_precip)
 plot(m1_precip)
-
-# Check whether the annual temperature has increased from 1996 to 2010:
-m1_short = lm(MeantempAnnual~Year, data=shrubs2 %>% filter(Year > 1995 & Year < 2010))
-summary(m1_short)
-plot(m1_short)
 
 png("Plots/Figure1.png", width = 5, height = 7, units = "in", res = 600)
 ggpubr::ggarrange(p1,p2, labels = "AUTO", ncol = 1, nrow = 2)
@@ -246,6 +279,16 @@ GT = tibble(X = c(1930,1930),
        Y = c(2,1.8),
        L = c("italic(R)^2==0.74","italic(p)<0.001"))
 
+
+m2 = lm(ringarea~Year, data = area2 %>% filter(Year > 1995 & Year < 2011)); summary(m2)
+pred.m2 = predict(m2, newdata = data.frame(Year = seq(1996, 2010, 1)))
+area2[,"Pred2"] = NA
+area2[area2$Year > 1995 & area2$Year < 2011,"Pred2"] = pred.m2
+
+GT2 = tibble(X = c(1950,1950),
+            Y = c(2,1.8),
+            L = c("italic(R)^2==0","italic(p)==0.74"))
+
 p1 = area2 %>%
   mutate(upper = ringarea + sd, lower = ringarea -sd) %>%
   mutate(N = N/100) %>%
@@ -253,9 +296,11 @@ p1 = area2 %>%
   ggplot(aes(x = Year, y = ringarea)) + 
   geom_ribbon(aes(ymin = lower, ymax = upper), fill = "grey") + 
   theme_classic() + geom_line(lwd = 1.1) + 
-  geom_line(aes(y = Pred), col = "blue") + 
+  geom_line(aes(y = Pred), col = "blue") +
+  geom_line(aes(y = Pred2), col = "orange") +
   scale_x_continuous(breaks = seq(1920, 2020, by = 10)) + ylab(expression(Ring~area~(mm^2))) +
-  geom_text(aes(x = X, y = Y, label = L), data = GT, parse = T)
+  geom_text(aes(x = X, y = Y, label = L), data = GT, parse = T, col = "blue") +
+  geom_text(aes(x = X, y = Y, label = L), data = GT2, parse = T, col = "orange")
 
 # Breakpoint analysis:
 m1_breakpoint = segmented::segmented(m1)
@@ -286,14 +331,25 @@ GT = tibble(X = c(5,5),
             Y = c(2,1.8),
             L = c("italic(R)^2==0.27","italic(p)<0.001"))
 
+m2 = lm(ringarea~JulyTemp, data = area3 %>% filter(Year > 1995 & Year < 2011)); summary(m2)
+pred.m2 = predict(m2, newdata = data.frame(JulyTemp = area3[,"JulyTemp"]))
+area3[,"Pred2"] = pred.m2
+area3[area3$JulyTemp < min(area3[area3$Year > 1995 & area3$Year < 2011, "JulyTemp"]),"Pred2"] = NA
+
+GT2 = tibble(X = c(6.5,6.5),
+            Y = c(2,1.8),
+            L = c("italic(R)^2==0.22","italic(p)<0.04"))
+
 p2 = area3 %>%
   mutate(upper = ringarea + sd, lower = ringarea -sd) %>%
   mutate(lower = ifelse(lower < 0, 0, lower)) %>%
   ggplot(aes(x = JulyTemp, y = ringarea)) + 
   theme_classic() + geom_pointrange(aes(ymin = lower, ymax = upper),shape = 1) + 
-  geom_line(aes(y = Pred), col = "blue") + 
+  geom_line(aes(x = JulyTemp, y = Pred), col = "blue") + 
+  geom_line(aes(x = JulyTemp, y = Pred2), col = "orange") + 
   ylab(expression(Ring~area~(mm^2))) +
-  geom_text(aes(x = X, y = Y, label = L), data = GT, parse = T) + 
+  geom_text(aes(x = X, y = Y, label = L), data = GT, parse = T, col="blue") + 
+  geom_text(aes(x = X, y = Y, label = L), data = GT2, parse = T, col = "orange") + 
   xlab("Mean July Temperature (\u00B0C)") 
 
 png("Plots/Figure4.png", width = 5, height = 7, units = "in", res = 600)
@@ -303,28 +359,6 @@ dev.off()
 # Test shrub growth over the same period as shrub cover (1996-2010)
 m1_mod = lm(ringarea~Year, data = area2 %>% filter(Year > 1995 & Year < 2011)); summary(m1_mod) # Not significant!
 plot(m1_mod)
-
-# Test over all 14 year periods in the data set
-outmove = data.frame(start = 1922:2000,
-           end = 1936:2014, 
-           coeff = NA,
-           p = NA)
-
-for(i in 1:dim(outmove)[1]){
-  m1_mod = lm(ringarea~Year, data = area2 %>% filter(Year >= outmove$start[i] & Year <= outmove$end[i]))
-  outmove$coeff[i] = summary(m1_mod)$coefficients[2,1]
-  outmove$p[i] = summary(m1_mod)$coefficients[2,4]
-}
-
-outmove$sig = ifelse(outmove$p < 0.05, "Yes", "No")
-outmove$focus = ifelse(outmove$start ==1996, "Yes", "No")
-
-write_csv(outmove, "DataOut/outmove.csv")
-
-# Plot to be added to supplemental
-read_csv("DataOut/outmove.csv") %>% ggplot(aes(x = start, y = coeff))+ geom_hline(yintercept = 0, lty = 2) + geom_line() + geom_point(aes(col = sig, shape = focus), size = 2) + theme_classic() + xlab("Start of 14-yr window") + ylab("Coefficient (Year)") +
-  scale_color_manual(values = c("blue", "orange"), name = "Significant?") + scale_shape_discrete(guide = F)
-
 
 # Verify with LMM
 area4 = read_csv("Data/ringarea2.csv") %>% gather(-Year, key = ID, value = ringarea) %>% filter(!is.na(ringarea)) %>% mutate(ringarea = ringarea/1e6)
@@ -404,16 +438,23 @@ ggplot() +
   annotate(geom = "text", x = c(-105.053056-0.5,-115.095-3,-108.083333-3.2,-108.416667-2.5), 
            y =c(69.117222+0.75,67.825556,68.350000-0.1,68.916667+0.4), 
            label = c("Cambridge \n Bay", "Kugluktuk", "Walker Bay", "Byron Bay"), 
-           color = 'black', size = 3)
+           color = 'black', size = 3) +
+  annotate(geom = "text", x = c(-110, -102, -122, -110), 
+           y =c(71.3,67.5, 73, 65.5), 
+           label = c("Victoria Island", "Kent Peninsula", "Banks \nIsland", "Mainland Nunavut"), 
+           color = 'black', size = 4) + 
+  annotate(geom = "segment", x = -106, y = 67.8, xend = -107, yend = 68.6, arrow = arrow(length = unit(0.10,"cm")))
 dev.off()
 
-# Moving analysis 11-year averages for the supplemental ----
+# Moving analysis 14-year averages ----
+
+# .....July temperature -----
 
 # Years to consider
 YEARS = unique(CBclimate$year)
 YEARS2 = data.frame(start = YEARS,
-                    end = YEARS + 11,
-                    middle = YEARS + 11/2) %>% filter(end <= max(YEARS) & start >= 1949)
+                    end = YEARS + 14,
+                    middle = YEARS + 14/2) %>% filter(end <= max(YEARS) & start >= 1949)
 YEARS2$`Ring width` = NA
 YEARS2$`Ring area` = NA
 selchrono = as.numeric(rownames(dresp))
@@ -430,10 +471,65 @@ for(i in 1:dim(YEARS2)[1]){
   YEARS2$`Ring area`[i] = cor(CBclimatecur$MT, areacur$ringarea, method = 'pearson')
 }
 
-YEARS2 %>% write_csv("DataOut/movingcorr.csv")
+YEARS2 %>% write_csv("DataOut/movingcorr_July.csv")
 
-YEARS2 %>% select(-end, -start) %>% gather(-middle,key = `Data Type`, value = value) %>% ggplot(aes(x = middle, y = value, linetype = `Data Type`)) + geom_line() + theme_classic() + ylab("Correlation: July temperature and growth") + xlab("Center of 11-yr window")
+# .....June temperature -----
 
-YEARS2 %>% filter(middle < 1970) %>% summarize(mean(`Ring area`), mean(`Ring width`))
+# Years to consider
+YEARS = unique(CBclimate$year)
+YEARS2 = data.frame(start = YEARS,
+                    end = YEARS + 14,
+                    middle = YEARS + 14/2) %>% filter(end <= max(YEARS) & start >= 1949)
+YEARS2$`Ring width` = NA
+YEARS2$`Ring area` = NA
+selchrono = as.numeric(rownames(dresp))
 
-YEARS2 %>% filter(middle > 1980) %>% summarize(mean(`Ring area`), mean(`Ring width`))
+
+for(i in 1:dim(YEARS2)[1]){
+  CBclimatecur = CBclimate %>% filter(year >= YEARS2$start[i] & year <= YEARS2$end[i] & month == 6)
+  
+  drespcur = dresp[selchrono >= YEARS2$start[i] & selchrono <= YEARS2$end[i],]
+  
+  areacur = area3 %>% filter(Year >= YEARS2$start[i] & Year <= YEARS2$end[i]) %>% as.data.frame()
+  
+  YEARS2$`Ring width`[i] = cor(CBclimatecur$MT, drespcur, method = 'pearson')
+  YEARS2$`Ring area`[i] = cor(CBclimatecur$MT, areacur$ringarea, method = 'pearson')
+}
+
+YEARS2 %>% write_csv("DataOut/movingcorr_June.csv")
+
+p1 = read_csv("DataOut/movingcorr_July.csv") %>% select(-end, -middle) %>% gather(-start,key = `Data Type`, value = value) %>% ggplot(aes(x = start, y = value)) + geom_line(aes(linetype = `Data Type`)) + theme_classic() + ylab("Correlation") + xlab("Start of 14-yr window") + xlim(range(read_csv("DataOut/outmove.csv")$start)) + ylim(c(-0.5,1))  +
+  geom_text(aes(x = x, y = y, label = label), 
+            data = tibble(x = 1940, y = 1, label = "July temperature & growth"))+
+  theme(legend.position = c(0.15, 0.175)) + geom_hline(yintercept = 0, lty = 2)
+
+p3 = read_csv("DataOut/movingcorr_June.csv") %>% select(-end, -middle) %>% gather(-start,key = `Data Type`, value = value) %>% ggplot(aes(x = start, y = value)) + geom_line(aes(linetype = `Data Type`)) + theme_classic() + ylab("Correlation") + xlab("Start of 14-yr window") + xlim(range(read_csv("DataOut/outmove.csv")$start)) + ylim(c(-0.5,1)) + geom_hline(yintercept = 0, lty = 2) +
+  geom_text(aes(x = x, y = y, label = label), 
+            data = tibble(x = 1940, y = 1, label = "June temperature & growth")) +
+  theme(legend.position = "none")
+
+# ......Test over all 14 year periods in the data set -----
+outmove = data.frame(start = 1922:2000,
+                     end = 1936:2014, 
+                     coeff = NA,
+                     p = NA)
+
+for(i in 1:dim(outmove)[1]){
+  m1_mod = lm(ringarea~Year, data = area2 %>% filter(Year >= outmove$start[i] & Year <= outmove$end[i]))
+  outmove$coeff[i] = summary(m1_mod)$coefficients[2,1]
+  outmove$p[i] = summary(m1_mod)$coefficients[2,4]
+}
+
+outmove$sig = ifelse(outmove$p < 0.05, "Yes", "No")
+outmove$focus = ifelse(outmove$start ==1996, "Yes", "No")
+
+write_csv(outmove, "DataOut/outmove.csv")
+
+p2 = read_csv("DataOut/outmove.csv") %>% ggplot(aes(x = start, y = coeff))+ geom_hline(yintercept = 0, lty = 2) + geom_line() + geom_point(aes(col = sig)) + theme_classic() + xlab("") + ylab("Coefficient (Growth~Year)") +
+  scale_color_manual(values = c("grey", "black"), name = "Significant?") +
+  theme(legend.position = c(0.15, 0.2))
+
+
+png("Plots/Figure6.png", width = 5, height = 7, units = "in", res = 600)
+ggpubr::ggarrange(p2,p1, labels = "AUTO", ncol = 1, nrow = 2)
+dev.off()  
