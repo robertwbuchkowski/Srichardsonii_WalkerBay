@@ -455,10 +455,11 @@ dev.off()
 # Years to consider
 YEARS = unique(CBclimate$year)
 YEARS2 = data.frame(start = YEARS,
-                    end = YEARS + 14,
-                    middle = YEARS + 14/2) %>% filter(end <= max(YEARS) & start >= 1949)
-YEARS2$`Ring width` = NA
-YEARS2$`Ring area` = NA
+                    end = YEARS + 14) %>% filter(end <= max(YEARS) & start >= 1949)
+YEARS2$`Ring width_value` = NA
+YEARS2$`Ring width_sig` = NA
+YEARS2$`Ring area_value` = NA
+YEARS2$`Ring area_sig` = NA
 selchrono = as.numeric(rownames(dresp))
 
 
@@ -469,46 +470,29 @@ for(i in 1:dim(YEARS2)[1]){
   
   areacur = area3 %>% filter(Year >= YEARS2$start[i] & Year <= YEARS2$end[i]) %>% as.data.frame()
   
-  YEARS2$`Ring width`[i] = cor(CBclimatecur$MT, drespcur, method = 'pearson')
-  YEARS2$`Ring area`[i] = cor(CBclimatecur$MT, areacur$ringarea, method = 'pearson')
+  m1 = lm(drespcur~CBclimatecur$MT)
+  YEARS2$`Ring width_value`[i] = coefficients(m1)[2]
+  YEARS2$`Ring width_sig`[i] = coefficients(summary(m1))[2,4] < 0.05
+  
+  m1 = lm(areacur$ringarea~CBclimatecur$MT)
+  YEARS2$`Ring area_value`[i] = coefficients(m1)[2]
+  YEARS2$`Ring area_sig`[i] = coefficients(summary(m1))[2,4] < 0.05
 }
 
 YEARS2 %>% write_csv("DataOut/movingcorr_July.csv")
 
-# .....June temperature -----
-
-# Years to consider
-YEARS = unique(CBclimate$year)
-YEARS2 = data.frame(start = YEARS,
-                    end = YEARS + 14,
-                    middle = YEARS + 14/2) %>% filter(end <= max(YEARS) & start >= 1949)
-YEARS2$`Ring width` = NA
-YEARS2$`Ring area` = NA
-selchrono = as.numeric(rownames(dresp))
-
-
-for(i in 1:dim(YEARS2)[1]){
-  CBclimatecur = CBclimate %>% filter(year >= YEARS2$start[i] & year <= YEARS2$end[i] & month == 6)
-  
-  drespcur = dresp[selchrono >= YEARS2$start[i] & selchrono <= YEARS2$end[i],]
-  
-  areacur = area3 %>% filter(Year >= YEARS2$start[i] & Year <= YEARS2$end[i]) %>% as.data.frame()
-  
-  YEARS2$`Ring width`[i] = cor(CBclimatecur$MT, drespcur, method = 'pearson')
-  YEARS2$`Ring area`[i] = cor(CBclimatecur$MT, areacur$ringarea, method = 'pearson')
-}
-
-YEARS2 %>% write_csv("DataOut/movingcorr_June.csv")
-
-p1 = read_csv("DataOut/movingcorr_July.csv") %>% select(-end, -middle) %>% gather(-start,key = `Data Type`, value = value) %>% ggplot(aes(x = start, y = value)) + geom_line(aes(linetype = `Data Type`)) + theme_classic() + ylab("Correlation") + xlab("Start of 14-yr window") + xlim(range(read_csv("DataOut/outmove.csv")$start)) + ylim(c(-0.5,1))  +
-  geom_text(aes(x = x, y = y, label = label), 
-            data = tibble(x = 1940, y = 1, label = "July temperature & growth"))+
-  theme(legend.position = c(0.15, 0.175)) + geom_hline(yintercept = 0, lty = 2)
-
-p3 = read_csv("DataOut/movingcorr_June.csv") %>% select(-end, -middle) %>% gather(-start,key = `Data Type`, value = value) %>% ggplot(aes(x = start, y = value)) + geom_line(aes(linetype = `Data Type`)) + theme_classic() + ylab("Correlation") + xlab("Start of 14-yr window") + xlim(range(read_csv("DataOut/outmove.csv")$start)) + ylim(c(-0.5,1)) + geom_hline(yintercept = 0, lty = 2) +
-  geom_text(aes(x = x, y = y, label = label), 
-            data = tibble(x = 1940, y = 1, label = "June temperature & growth")) +
-  theme(legend.position = "none")
+p1 = read_csv("DataOut/movingcorr_July.csv") %>% select(-end) %>% gather(-start,key = `Data Type`, value = value) %>% 
+  separate(`Data Type`, into = c('Data Type', "temp"), sep = "_") %>%
+  pivot_wider(names_from = temp, values_from = value) %>%
+  mutate(sig = ifelse(sig == 0, "No", "Yes")) %>%
+  ggplot(aes(x = start, y = value)) + geom_line(aes(linetype = `Data Type`), color = "grey") + theme_classic() + geom_point(aes(color = sig, shape = `Data Type`)) + ylab("Coefficient (Growth~July Temperature)") + xlab("Start of 14-yr window") + xlim(range(read_csv("DataOut/outmove.csv")$start)) +
+  theme(legend.position = c(0.15, 0.7)) + geom_hline(yintercept = 0, lty = 2) +
+  scale_color_manual(values = c("yellow", "purple4"), name = "Significant?", guide = F) +
+  scale_shape_manual(values = c(19,1))  +
+  annotate(geom= "segment",
+           x = 1996, xend = 1996,
+           y = 0.045, yend = 0.054,
+           arrow = arrow(length = unit(0.1, "cm")))
 
 # ......Test over all 14 year periods in the data set -----
 outmove = data.frame(start = 1922:2000,
@@ -527,14 +511,18 @@ outmove$focus = ifelse(outmove$start ==1996, "Yes", "No")
 
 write_csv(outmove, "DataOut/outmove.csv")
 
-p2 = read_csv("DataOut/outmove.csv") %>% ggplot(aes(x = start, y = coeff))+ geom_hline(yintercept = 0, lty = 2) + geom_line() + geom_point(aes(col = sig)) + theme_classic() + xlab("") + ylab("Coefficient (Growth~Year)") +
-  scale_color_manual(values = c("grey", "black"), name = "Significant?") +
-  theme(legend.position = c(0.15, 0.2))
+p2 = read_csv("DataOut/outmove.csv") %>% ggplot(aes(x = start, y = coeff))+ geom_hline(yintercept = 0, lty = 2) + geom_line(color = "grey") + geom_point(aes(col = sig)) + theme_classic() + xlab("") + ylab("Coefficient (Growth~Year)") +
+  scale_color_manual(values = c("yellow", "purple4"), name = "Significant?") +
+  theme(legend.position = c(0.15, 0.2)) +
+  annotate(geom= "segment",
+           x = 1996, xend = 1996,
+           y = -0.01, yend = -0.006,
+           arrow = arrow(length = unit(0.1, "cm")))
 
 
 png("Plots/Figure6.png", width = 5, height = 7, units = "in", res = 600)
 ggpubr::ggarrange(p2,p1, labels = "AUTO", ncol = 1, nrow = 2)
-dev.off()  
+dev.off()
 
 # Correlate chronology with 1996 to 2010 significant response function ----
 
