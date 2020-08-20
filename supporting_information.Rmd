@@ -303,6 +303,23 @@ read_csv("Data/ringarea2.csv") %>% gather(-Year, key = ID, value = ringarea) %>%
 
 ```
 
+## Significant response functions 1996 to 2010
+
+The response function analysis conducted with data from 1996 to 2010 produced significant coefficients for May, July, and August total precipitaiton. The univariate relationship was strongest and negative for July precipitation during this period (Figure 9).
+
+```{r, echo=F,message = F, fig.width=10, fig.height=10,fig.cap="The relationship between the ring width index (RWI) and May, July, and August total precipitation from 1996 to 2010. These three monthly precipitation variables were significant in a response function analysis."}
+read_csv("Data/TP_1996to2010.csv") %>% pivot_longer(May:August) %>%
+  rename(Year = year) %>%
+  ggplot(aes(x = value, y = chron)) + 
+  geom_point(aes(color = Year)) + facet_wrap(.~name, ncol = 1, nrow = 3) + 
+  theme_classic() + 
+  xlab("Total Precipitation (mm)") + 
+  ylab("RWI") +
+  stat_smooth(method = "lm") +
+  scale_color_viridis_c()
+```
+
+
 \pagebreak
 
 ```{r results = 'asis'}

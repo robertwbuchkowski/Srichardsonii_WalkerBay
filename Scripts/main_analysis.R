@@ -228,7 +228,7 @@ p2 = shrubs2 %>%
   ylab("Mean July Temperature (\u00B0C)")
 
 # Check whether total precipiration has changed from 1996 to 2010:
-m1_precip = lm(TotalPrecipAnnual~Year, data=shrubs2 %>% filter(Year > 1995 & Year < 2011)); summary(m1_precip)
+m1_precip = lm(MeantempJuly~Year, data=shrubs2 %>% filter(Year > 1995 & Year < 2011)); summary(m1_precip)
 m1_precip = lm(MeantempAnnual~Year, data=shrubs2 %>% filter(Year > 1995 & Year < 2011)); summary(m1_precip)
 m1_precip = lm(TotalPrecipAnnual~Year, data=shrubs2 %>% filter(Year > 1995 & Year < 2011)); summary(m1_precip)
 
@@ -535,3 +535,38 @@ p2 = read_csv("DataOut/outmove.csv") %>% ggplot(aes(x = start, y = coeff))+ geom
 png("Plots/Figure6.png", width = 5, height = 7, units = "in", res = 600)
 ggpubr::ggarrange(p2,p1, labels = "AUTO", ncol = 1, nrow = 2)
 dev.off()  
+
+# Correlate chronology with 1996 to 2010 significant response function ----
+
+selll = which(rownames(dresp) %in% c("1996", "2010"))
+
+selll = dresp[seq(selll[1], selll[2],1),]
+
+selll = CBclimate %>% 
+  filter(year > 1995 & year < 2011) %>%
+  select(-MT) %>%
+  filter(month %in% c(5,7,8)) %>%
+  pivot_wider(names_from = month, values_from = TP) %>%
+  mutate(chron = selll) %>%
+  rename(May = `5`,
+         July = `7`,
+         August = `8`)
+
+m1 <- lm(chron~May, data = selll); summary(m1)
+m1 <- lm(chron~July, data = selll); summary(m1)
+m1 <- lm(chron~August, data = selll); summary(m1)
+plot(chron~May, data= selll)
+plot(chron~July, data= selll)
+plot(chron~August, data= selll)
+
+selll %>% write_csv("Data/TP_1996to2010.csv")
+
+read_csv("Data/TP_1996to2010.csv") %>% pivot_longer(May:August) %>%
+  rename(Year = year) %>%
+  ggplot(aes(x = value, y = chron)) + 
+  geom_point(aes(color = Year)) + facet_wrap(.~name, ncol = 1, nrow = 3) + 
+  theme_classic() + 
+  xlab("Total Precipitation (mm)") + 
+  ylab("RWI") +
+  stat_smooth(method = "lm") +
+  scale_color_viridis_c()
