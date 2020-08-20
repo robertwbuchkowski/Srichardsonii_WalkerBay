@@ -228,8 +228,10 @@ p2 = shrubs2 %>%
   ylab("Mean July Temperature (\u00B0C)")
 
 # Check whether total precipiration has changed from 1996 to 2010:
-m1_precip = lm(TotalPrecipAnnual~Year, data=shrubs2 %>% filter(Year > 1995 & Year < 2011))
-summary(m1_precip)
+m1_precip = lm(TotalPrecipAnnual~Year, data=shrubs2 %>% filter(Year > 1995 & Year < 2011)); summary(m1_precip)
+m1_precip = lm(MeantempAnnual~Year, data=shrubs2 %>% filter(Year > 1995 & Year < 2011)); summary(m1_precip)
+m1_precip = lm(TotalPrecipAnnual~Year, data=shrubs2 %>% filter(Year > 1995 & Year < 2011)); summary(m1_precip)
+
 plot(m1_precip)
 
 png("Plots/Figure1.png", width = 5, height = 7, units = "in", res = 600)
