@@ -122,7 +122,7 @@ shrubcompare = shrubs %>% select(Year, stdringwidth, Nb_shrubs) %>% left_join(re
 
 ### Location of the field site and weather stations
 
-We collected shrubs from the Walker Bay field reasearch station over three years (Table 1), which is located on the Kent Penninsula (Figure 1). The climate data came from (1) a weather station operational at Walker Bay for ~5 years, (2) Environment Canada weather data from Cambridge Bay, (3) Environment Canada weather data from Byron Bay, and (4) Environment Canada weather data from Kugluktuk (Figure 1). Byron Bay is closest to Walker Bay, but has limited climate data and a different vegatation community (D. Morris, personal observation). We expected \textit{a priori} that Cambridge Bay weather data would be the best match for Walker Bay.
+We collected shrubs from the Walker Bay field reasearch station over three years (Table 1), which is located on the Kent Penninsula (Figure 1). The climate data came from (1) a weather station operational at Walker Bay for ~5 years, (2) Environment Canada weather data from Cambridge Bay, (3) Environment Canada weather data from Byron Bay, and (4) Environment Canada weather data from Kugluktuk (Figure 1). Byron Bay is closest to Walker Bay, but has limited climate data and a somewhat different vegatation structure (D. Morris, personal observation). We expected \textit{a priori} that Cambridge Bay weather data would be the best match for Walker Bay.
 
 To confirm that Cambridge Bay was the most appropriate climate data, we also downloaded data from two other nearby weather stations at Kugluktuk and Byron Bay.
 
@@ -155,7 +155,7 @@ ggplot() +
 ###Walker Bay Climate Data
 The temperature and precipitation data from a weather station at Walker Bay are available from `r min(WB$Year)` to `r max(WB$Year)`. Annual average temperature did not change during this interval (Figure 2a). The shrub growth recorded at Walker Bay from  `r min(WB$Year)` to `r max(WB$Year)` was not significantly related to annual temperature (*p* > 0.5; Figure 2b) although there was a marginally significant relationship with July temperature (*p* = 0.051; Figure 2c).   
 
-```{r, echo=F, message = F, fig.width=10, fig.height=5,fig.cap="The climate data from Walker Bay and its relationship with shrub growth, which is measured as ring width index (RWI). Air Temperature (a), annual temperature versus shrub growth (b), and July temperature versus shrub growth (c). The analysis includes data from 1996 to 2007."}
+```{r, echo=F, message = F, fig.width=10, fig.height=5,fig.cap="The climate data from Walker Bay and its relationship with shrub growth, which is measured as ring width index (RWI). Air temperature (a), annual temperature versus shrub growth (b), and July temperature versus shrub growth (c). The analysis includes data from 1996 to 2007."}
 pp1 = WB %>% group_by(Year) %>%
   summarize(MeanT = mean(Temperature), n = n()) %>%
   filter(n > 300) %>% ggplot(aes(x=Year, y=MeanT)) + geom_point(size=2) + theme_classic() + ylab("Walker Bay Temperature")
@@ -207,7 +207,8 @@ ggpubr::ggarrange(p1,p2, labels = "AUTO", ncol = 1, nrow = 2)
 ```
 
 ###Byron Bay Climate Data
-The temperature and precipitation data from a weather station at Byron Bay are available from `r min(bryonbay$Year)` to `r max(bryonbay$Year)`. Annual average temperature did not change over this interval (*p* > 0.78). The shrub growth at Walker Bay from `r min(bryonbay$Year)` to `r max(bryonbay$Year)` was not significantly related to Byron Bay annual temperature (*p* > 0.7) nor was there sa  significant relationship with July temperature (*p* > 0.2; Figure 3b).  
+The temperature and precipitation data from a weather station at Byron Bay are available from `r min(bryonbay$Year)` to `r max(bryonbay$Year)`. Annual average temperature did not change over this interval (*p* > 0.78). The shrub growth at Walker Bay from `r min(bryonbay$Year)` to `r max(bryonbay$Year)` was not significantly related to Byron Bay annual temperature (*p* > 0.7) nor was there a significant relationship with July temperature (*p* > 0.2; Figure 3b).  
+
 There were enough data for Byron Bay to repeat the response function analysis comparing Walker Bay shrubs to Byron Bay climate records. April temperature during the growth year at Byron Bay was a significant predictor of shrub radial growth at Walker Bay. All other response function coefficients were not significant (Figure 5). We are cautious to interpret the significant response function coefficient for April as mechanistic, because the climate time series for Byron Bay (1962 - 1991) is much shorter than the one available for Cambridge Bay (1949 - present). In fact, reanalyzing the climate-growth relationship for Cambridge Bay using the same years as there are data for Byron Bay produces a new significant response function coefficient (April total percipitation) that is not significant for the full dataset. In summary, there is limited evidence that spring temperature might be important for shrubs at Walker Bay, but it is not strong enough to be conclusive with the current dataset. 
 
 ```{r, echo=F,message = F, fig.width=10, fig.height=8,fig.cap="April temperature in the growth year at Byron Bay had a significant response function coefficient. Lower case letters indicate months in the year before shrub growth, while capital letters indicate months in the year of shrub growth. The analysis includes data from 1957 to 1993."}
@@ -246,14 +247,14 @@ shrubcompare %>% select(Year, WalkerBay, CambridgeBay, Kugluktuk) %>% gather(-Ye
   left_join(
     tibble(
       Chron = c("WalkerBay", "CambridgeBay", "Kugluktuk"),
-      Chron2 = c("italic(Salix~richardsonii)~at~Walker~Bay","italic(Salix~alaxensis)~at~Cambridge~Bay","italic(Picea~marinan)~at~Kugluktuk")
+      Chron2 = c("italic(Salix~richardsonii)~at~Walker~Bay","italic(Salix~alaxensis)~at~Cambridge~Bay","italic(Picea~mariana)~at~Kugluktuk")
     )
   ) %>%
   mutate(Chron = Chron2) %>%
   select(-Chron2) %>%
   ggplot(aes(Year, Ring, group=Chron, color=Chron)) + geom_line()+ theme_classic() +
-  annotate("text", x=1950,                                                                    y=c(2.2,2.0, 1.8),                                                                 label=c("italic(Salix~richardsonii)~at~Walker~Bay~versus~italic(Salix~alaxensis)~at~Cambridge~Bay: r==0.19",                                          "italic(Salix~richardsonii)~at~Walker~Bay~versus~italic(Picea~marinan)~at~Kugluktuk: r==0.003",
-                  "italic(Picea~marinan)~at~Kugluktuk~versus~italic(Salix~alaxensis)~at~Cambridge~Bay: r==0.04"), parse = T) +
+  annotate("text", x=1950,                                                                    y=c(2.2,2.0, 1.8),                                                                 label=c("italic(Salix~richardsonii)~at~Walker~Bay~versus~italic(Salix~alaxensis)~at~Cambridge~Bay: r==0.19",                                          "italic(Salix~richardsonii)~at~Walker~Bay~versus~italic(Picea~mariana)~at~Kugluktuk: r==0.003",
+                  "italic(Picea~mariana)~at~Kugluktuk~versus~italic(Salix~alaxensis)~at~Cambridge~Bay: r==0.04"), parse = T) +
   scale_color_discrete(name = "Chronology", labels = scales::parse_format()) + ylab("Standardized ring width") + theme(legend.position = "top")
 ```
 
@@ -307,7 +308,7 @@ read_csv("Data/ringarea2.csv") %>% gather(-Year, key = ID, value = ringarea) %>%
 
 The response function analysis conducted with data from 1996 to 2010 produced significant coefficients for May, July, and August total precipitaiton. The univariate relationship was strongest and negative for July precipitation during this period (Figure 9).
 
-```{r, echo=F,message = F, fig.width=10, fig.height=10,fig.cap="The relationship between the ring width index (RWI) and May, July, and August total precipitation from 1996 to 2010. These three monthly precipitation variables were significant in a response function analysis."}
+```{r, echo=F,message = F, fig.width=10, fig.height=10,fig.cap="The relationship between the ring width index (RWI) and May, July, and August total precipitation of the growing year from 1996 to 2010. These three monthly precipitation variables were significant in a response function analysis."}
 read_csv("Data/TP_1996to2010.csv") %>% pivot_longer(May:August) %>%
   rename(Year = year) %>%
   ggplot(aes(x = value, y = chron)) + 
@@ -324,7 +325,7 @@ read_csv("Data/TP_1996to2010.csv") %>% pivot_longer(May:August) %>%
 
 ```{r results = 'asis'}
 
-A1 = c("June", 2010, 17, "We randomly sampled one shrub from 12 lemming sampling grids,\none shrub from four quardats of a predator field exclosure,\nand one shrub from a snap-trap transect.", "Krebs et al., 2012;\nDupuch et al., 2014")
+A1 = c("June", 2010, 17, "We randomly sampled one shrub from 12 lemming sampling grids,\none shrub from four quardats of a predator field exclosure,\nand one shrub from a snap-trap transect.", "Morris et al. 2000;\nKrebs et al., 2012;\nDupuch et al., 2014")
 A2 = c("June", 2011, 41, "We randomly sampled forty shrubs at four\nrandom transects (500m long and 100m apart). We added one shrub\nthat was much older than the others to extend our chronology.", "No currently\npublished work")
 A3 = c("June", 2015, 12, "We randomly sampled one shrub adjacent to the same 12 lemming sampling\ngrids that were sampled in 2010.", "Dupuch et al., 2014")
 
@@ -385,3 +386,13 @@ knitr::kable(shortshrubs, caption = "Short shrub abundance for two years at 3000
 ```{r results = 'asis'}
 knitr::kable(shortshrubst, caption = "Short shrub abundance for two years on 300 transects")
 ```
+
+\pagebreak
+
+# References
+
+Dupuch, A., Morris, D. W., Ale, S. B., Wilson, D. J., and Moore, D. E.,2014: Landscapes of fear or competition? Predation did not alter habitat choiceby Arctic rodents. Oecologia, 174:403-412.
+
+Krebs, C. J., Bilodeau, F., Reid, D., Gauthier, G., Kenney, A. J., Gilbert, S., … Wilson, D. J. 2012: Are lemming winter nest counts a good index of population density? Journal of Mammalogy, 93: 87–92.
+
+Morris, D.W., Davidson, D.L. & Krebs, C.J., 2000. Measuring the ghostof competition: insights from density-dependent habitat selection on theco-existence and dynamics of lemmings. EvolutionEcology Research, 2: 69-80.

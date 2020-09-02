@@ -189,14 +189,16 @@ GT2 = tibble(X = c(1980,1980),
             L = c("italic(R)^2==0","italic(p)==0.65"))
 
 p1 = shrubs2 %>% 
+  mutate(DataSet = ifelse(is.na(Pred2), "a", "b")) %>%
   ggplot(aes(x = Year, y = MeantempAnnual)) + 
-  geom_point(shape = 1) + theme_classic() + 
+  geom_point(aes(color = DataSet),shape = 1) + theme_classic() + 
   scale_x_continuous(breaks = seq(1940, 2020, by = 10)) +
   geom_text(aes(x = X, y = Y, label = L), data = GT, parse = T, color = "blue") +
-  geom_text(aes(x = X, y = Y, label = L), data = GT2, parse = T, color = "orange") +
+  # geom_text(aes(x = X, y = Y, label = L), data = GT2, parse = T, color = "orange") +
   geom_line(aes(y = Pred), col = "blue") + 
-  geom_line(aes(y = Pred2), col = "orange") + 
-  ylab("Mean Temperature (\u00B0C)")
+  # geom_line(aes(y = Pred2), col = "orange") + 
+  ylab("Mean Temperature (\u00B0C)") +
+  scale_color_manual(values = c("black", "orange"), guide = F)
 
 m1 = lm(MeantempJuly~Year, data=shrubs2)
 pred.m1 = predict(m1, newdata = data.frame(Year = seq(1948, 2013, 1)))
@@ -218,15 +220,17 @@ GT2 = tibble(X = c(1980,1980),
              L = c("italic(R)^2==0","italic(p)==0.39"))
 
 p2 = shrubs2 %>% 
+  mutate(DataSet = ifelse(is.na(Pred2), "a", "b")) %>%
   ggplot(aes(x = Year, y = MeantempJuly)) + 
-  geom_point(shape = 1) + theme_classic() + 
-  scale_x_continuous(breaks = seq(1940, 2020, by = 10)) + 
+  geom_point(aes(color = DataSet),shape = 1) + theme_classic() + 
+  scale_x_continuous(breaks = seq(1940, 2020, by = 10)) +
   geom_text(aes(x = X, y = Y, label = L), data = GT, parse = T, color = "blue") +
-  geom_text(aes(x = X, y = Y, label = L), data = GT2, parse = T, color = "orange") +
+  # geom_text(aes(x = X, y = Y, label = L), data = GT2, parse = T, color = "orange") +
   geom_line(aes(y = Pred), col = "blue") + 
-  geom_line(aes(y = Pred2), col = "orange") + 
-  ylab("Mean July Temperature (\u00B0C)")
-
+  # geom_line(aes(y = Pred2), col = "orange") + 
+  ylab("Mean July Temperature (\u00B0C)") + 
+  scale_color_manual(values = c("black", "orange"), guide = F)
+  
 # Check whether total precipiration has changed from 1996 to 2010:
 m1_precip = lm(MeantempJuly~Year, data=shrubs2 %>% filter(Year > 1995 & Year < 2011)); summary(m1_precip)
 m1_precip = lm(MeantempAnnual~Year, data=shrubs2 %>% filter(Year > 1995 & Year < 2011)); summary(m1_precip)
@@ -297,12 +301,15 @@ p1 = area2 %>%
   mutate(lower = ifelse(lower < 0, 0, lower)) %>%
   ggplot(aes(x = Year, y = ringarea)) + 
   geom_ribbon(aes(ymin = lower, ymax = upper), fill = "grey") + 
-  theme_classic() + geom_line(lwd = 1.1) + 
+  theme_classic() + 
+  geom_line(lwd = 1.1) + 
+  geom_line(data = area2 %>%
+              filter(!is.na(Pred2)), color = "orange", lwd = 1.2) + 
   geom_line(aes(y = Pred), col = "blue") +
-  geom_line(aes(y = Pred2), col = "orange") +
+  # geom_line(aes(y = Pred2), col = "orange") +
   scale_x_continuous(breaks = seq(1920, 2020, by = 10)) + ylab(expression(Ring~area~(mm^2))) +
-  geom_text(aes(x = X, y = Y, label = L), data = GT, parse = T, col = "blue") +
-  geom_text(aes(x = X, y = Y, label = L), data = GT2, parse = T, col = "orange")
+  geom_text(aes(x = X, y = Y, label = L), data = GT, parse = T, col = "blue")
+  # geom_text(aes(x = X, y = Y, label = L), data = GT2, parse = T, col = "orange")
 
 # Breakpoint analysis:
 m1_breakpoint = segmented::segmented(m1)
@@ -343,16 +350,18 @@ GT2 = tibble(X = c(6.5,6.5),
             L = c("italic(R)^2==0.22","italic(p)<0.04"))
 
 p2 = area3 %>%
+  mutate(DataSet = ifelse(Year > 1995 & Year < 2011, "a", "b")) %>%
   mutate(upper = ringarea + sd, lower = ringarea -sd) %>%
   mutate(lower = ifelse(lower < 0, 0, lower)) %>%
   ggplot(aes(x = JulyTemp, y = ringarea)) + 
-  theme_classic() + geom_pointrange(aes(ymin = lower, ymax = upper),shape = 1) + 
+  theme_classic() + geom_pointrange(aes(ymin = lower, ymax = upper, color = DataSet),shape = 1) + 
   geom_line(aes(x = JulyTemp, y = Pred), col = "blue") + 
   geom_line(aes(x = JulyTemp, y = Pred2), col = "orange") + 
   ylab(expression(Ring~area~(mm^2))) +
   geom_text(aes(x = X, y = Y, label = L), data = GT, parse = T, col="blue") + 
   geom_text(aes(x = X, y = Y, label = L), data = GT2, parse = T, col = "orange") + 
-  xlab("Mean July Temperature (\u00B0C)") 
+  xlab("Mean July Temperature (\u00B0C)") +
+  scale_color_manual(values = c("orange", "black"), guide = F)
 
 png("Plots/Figure4.png", width = 5, height = 7, units = "in", res = 600)
 ggpubr::ggarrange(p1,p2, labels = "AUTO", ncol = 1, nrow = 2)
@@ -487,7 +496,7 @@ p1 = read_csv("DataOut/movingcorr_July.csv") %>% select(-end) %>% gather(-start,
   mutate(sig = ifelse(sig == 0, "No", "Yes")) %>%
   ggplot(aes(x = start, y = value)) + geom_line(aes(linetype = `Data Type`), color = "grey") + theme_classic() + geom_point(aes(color = sig, shape = `Data Type`)) + ylab("Coefficient (Growth~July Temperature)") + xlab("Start of 14-yr window") + xlim(range(read_csv("DataOut/outmove.csv")$start)) +
   theme(legend.position = c(0.15, 0.7)) + geom_hline(yintercept = 0, lty = 2) +
-  scale_color_manual(values = c("yellow", "purple4"), name = "Significant?", guide = F) +
+  scale_color_manual(values = c("#E69F00", "purple4"), name = "Significant?", guide = F) +
   scale_shape_manual(values = c(19,1))  +
   annotate(geom= "segment",
            x = 1996, xend = 1996,
@@ -512,7 +521,7 @@ outmove$focus = ifelse(outmove$start ==1996, "Yes", "No")
 write_csv(outmove, "DataOut/outmove.csv")
 
 p2 = read_csv("DataOut/outmove.csv") %>% ggplot(aes(x = start, y = coeff))+ geom_hline(yintercept = 0, lty = 2) + geom_line(color = "grey") + geom_point(aes(col = sig)) + theme_classic() + xlab("") + ylab("Coefficient (Growth~Year)") +
-  scale_color_manual(values = c("yellow", "purple4"), name = "Significant?") +
+  scale_color_manual(values = c("#E69F00", "purple4"), name = "Significant?") +
   theme(legend.position = c(0.15, 0.2)) +
   annotate(geom= "segment",
            x = 1996, xend = 1996,
