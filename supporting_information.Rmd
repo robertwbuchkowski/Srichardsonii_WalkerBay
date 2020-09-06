@@ -1,7 +1,9 @@
 ---
 title: "Supporting Information"
-subtitle: Warmer temperatures promote shrub radial growth but not cover in the Central Canadian Arctic
+subtitle: Warmer temperatures promote shrub radial growth but not cover in the Central
+  Canadian Arctic
 output:
+  word_document: default
   pdf_document: default
 ---
 
